@@ -1,0 +1,1385 @@
+---
+title: "Smiley Real Estate Analysis"
+author: "Aro Roseman"
+date: "2025-12-05"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    section_autonumber: true
+    theme: readable
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+```
+
+```{r libraries, include=FALSE}
+library(readr)
+library(tidyverse)
+library(rlang)
+library(purrr)
+library(plotly)
+library(knitr)
+library(kableExtra)
+library(scales)
+```
+
+```{r import, include=FALSE}
+agents <- read_csv("C:/Users/alyss/OneDrive/Job applications/Clever Real Estate Working Interview/agents.csv")
+calls <- read_csv("C:/Users/alyss/OneDrive/Job applications/Clever Real Estate Working Interview/calls.csv")
+customers <- read_csv("C:/Users/alyss/OneDrive/Job applications/Clever Real Estate Working Interview/customers.csv")
+markets <- read_csv("C:/Users/alyss/OneDrive/Job applications/Clever Real Estate Working Interview/markets.csv")
+sales <- read_csv("C:/Users/alyss/OneDrive/Job applications/Clever Real Estate Working Interview/sales.csv")
+```
+
+---
+
+# 1. Data Cleaning and Preparation 🧹
+This first section is about cleaning and preparing the data. It's not very
+interesting and isn't very nice to look at, so it's hidden from this report.
+However, feel free to scroll through the R Markdown file on Github and take a 
+look at the notes I left about why I made the corrections I did. But for now,
+let's get straight to the fun part!
+
+```{r data_cleaning, include=FALSE}
+str(agents)
+str(calls)
+str(customers)
+str(markets)
+str(sales)
+```
+
+```{r data_type_correct, include=FALSE}
+#Convert datetime character type to datetime object
+calls$call_date <- mdy_hm(calls$call_date)
+customers$created_at <- ymd_hms(customers$created_at)
+sales$sale_date <- mdy_hms(sales$sale_date)
+
+#Remove special characters from market$price_new_list_median and price_closed_median
+#and sales$amount and convert to numeric
+markets <- markets %>%
+  mutate(
+    price_new_list_median = str_remove_all(price_new_list_median, "[$,]"),
+    price_new_list_median = as.numeric(price_new_list_median)
+  )
+markets <- markets %>%
+  mutate(
+    price_closed_median = str_remove_all(price_closed_median, "[$,]"),
+    price_closed_median = as.numeric(price_closed_median)
+  )
+sales <- sales %>%
+  mutate(
+    amount = str_remove_all(amount, "[$,]"),
+    amount = as.numeric(amount)
+  )
+
+#Converts ids to factors
+agents <- agents %>%
+  mutate(agent_id = as.factor(agent_id))
+agents <- agents %>%
+  mutate(market_id = as.factor(market_id))
+calls <- calls %>%
+  mutate(call_id = as.factor(call_id))
+calls <- calls %>%
+  mutate(customer_id = as.factor(customer_id))
+customers <- customers %>%
+  mutate(customer_id = as.factor(customer_id))
+customers <- customers %>%
+  mutate(market_id = as.factor(market_id))
+markets <- markets %>%
+  mutate(market_id = as.factor(market_id))
+markets <- markets %>%
+  mutate(census_name = as.factor(census_name))
+markets <- markets %>%
+  mutate(common_name = as.factor(common_name))
+sales <- sales %>%
+  mutate(sale_id = as.factor(sale_id))
+sales <- sales %>%
+  mutate(customer_id = as.factor(customer_id))
+```
+
+```{r date_logic_check, include=FALSE}
+#Define the comparison time
+current_time <- as.POSIXct("2025-12-05 12:00:00", tz="UTC") 
+
+# Define the historical cut-off: Anything before January 1, 2025 is an error
+historical_cutoff <- as.POSIXct("2025-01-01 00:00:00", tz="UTC")
+
+#calls
+calls_future_dates <- calls %>%
+  filter(call_date > current_time)
+
+calls_old_dates <- calls %>%
+  filter(call_date < historical_cutoff)
+
+#customers
+customers_future_dates <- customers %>%
+  filter(created_at > current_time)
+
+customers_old_dates <- customers %>%
+  filter(created_at < historical_cutoff)
+
+#sales
+sales_future_dates <- sales %>%
+  filter(sale_date > current_time)
+
+sales_old_dates <- sales %>%
+  filter(sale_date < historical_cutoff)
+
+# Print the results
+print(calls_future_dates)
+print(calls_old_dates)
+
+print(customers_future_dates)
+print(customers_old_dates)
+
+print(sales_future_dates)
+print(sales_old_dates)
+```
+
+```{r missing_value_check, include=FALSE}
+#Number of missing values
+agents_na <- agents %>%
+  summarise(across(everything(), ~sum(is.na(.))))
+calls_na <- calls %>%
+  summarise(across(everything(), ~sum(is.na(.))))
+customers_na <- customers %>%
+  summarise(across(everything(), ~sum(is.na(.))))
+markets_na <- markets %>%
+  summarise(across(everything(), ~sum(is.na(.))))
+sales_na <- sales %>%
+  summarise(across(everything(), ~sum(is.na(.))))
+
+#Percentage of missing values
+na_percent <- function(df) {
+  sapply(df, function(x) round(sum(is.na(x)) / length(x) * 100, 2))
+}
+na_percent_agents <- na_percent(agents)
+print(na_percent_agents)
+na_percent_calls <- na_percent(calls)
+print(na_percent_calls)
+na_percent_customers <- na_percent(customers)
+print(na_percent_customers)
+na_percent_markets <- na_percent(markets)
+print(na_percent_markets)
+na_percent_sales <- na_percent(sales)
+print(na_percent_sales)
+
+#Check missing values
+rows_with_na_agents <- agents %>%
+  filter(rowSums(is.na(.)) > 0)
+print(rows_with_na_agents)
+#Low missingness - impute missing values with median
+median_customer_reviews_2024 <- median(agents$customer_reviews_2024, na.rm = TRUE)
+agents <- agents %>%
+  replace_na(list(customer_reviews_2024 = median_customer_reviews_2024))
+median_avg_rating_2024 <- median(agents$avg_rating_2024, na.rm = TRUE)
+agents <- agents %>%
+  replace_na(list(avg_rating_2024 = median_avg_rating_2024))
+
+rows_with_na_calls <- calls %>%
+  filter(rowSums(is.na(.)) > 0)
+print(rows_with_na_calls)
+#High percentage of missing values, but only for call handlers of disconnected
+#calls or voicemails. These values should be NA and so are not truly missing
+
+rows_with_na_sales <- sales %>%
+  filter(rowSums(is.na(.)) > 0)
+#sales rows with missing values are missing all values - drop rows
+sales <- sales %>%
+    filter(!if_all(everything(), is.na))
+```
+
+```{r outliers_check, include=FALSE}
+check_outliers <- function(df, col_name, k = 1.5) {
+  col_sym <- sym(col_name) 
+
+  #Calculate IQR components
+  Q1 <- quantile(df[[col_name]], 0.25, na.rm = TRUE)
+  Q3 <- quantile(df[[col_name]], 0.75, na.rm = TRUE)
+  IQR_val <- Q3 - Q1
+  
+  lower <- Q1 - (k * IQR_val)
+  upper <- Q3 + (k * IQR_val)
+  
+  #Identify and count the outliers
+  outliers <- df %>%
+    filter(!!col_sym < lower | !!col_sym > upper) %>%
+    # Select only the key columns for review
+    select(!!col_sym, everything())
+    
+  #Return the results as a list
+  return(list(
+    column = col_name,
+    count = nrow(outliers),
+    percentage = round(nrow(outliers) / sum(!is.na(df[[col_name]])) * 100, 2),
+    outlier_rows = outliers
+  ))
+}
+
+df_list <- list(
+  agents = agents, 
+  calls = calls, 
+  customers = customers, 
+  markets = markets, 
+  sales = sales 
+)
+
+columns_to_check <- list(
+  agents = c("buyer_customers_sent_2024", "seller_customers_sent_2024",
+             "buyer_closes_2024", "seller_closes_2024", "customer_reviews_2024",
+             "avg_rating_2024"),
+  markets = c("population", "days_on_market_median", "price_new_list_median",
+              "price_closed_median", "listings_on_market_count", "listings_price_increase_count", "listings_price_decrease_count", "listings_closed_count"),
+  sales = c("amount")
+)
+
+results <- imap(df_list, function(df, df_name) {
+  
+  cols <- columns_to_check[[df_name]]
+  
+  if (is.null(cols)) {
+    return(NULL)
+  }
+  
+  outlier_results <- map(cols, ~ check_outliers(df, .x))
+  
+  return(outlier_results)
+})
+
+results <- compact(results)
+
+# Create a summary table of all outlier counts
+outlier_summary <- imap_dfr(results, function(df_res, df_name) {
+  map_dfr(df_res, ~ data.frame(
+    Dataset = df_name,
+    Column = .x$column,
+    Outlier_Count = .x$count,
+    Percent_Outliers = .x$percentage
+  ))
+})
+
+print(outlier_summary)
+
+#Look at rows with outliers
+get_outlier_rows <- function(dataset_name, column_name) {
+  result_list <- results[[dataset_name]]
+  match_index <- map_lgl(result_list, ~ .x$column == column_name)
+  return(result_list[match_index][[1]]$outlier_rows)
+}
+
+#customer_reviews_2024
+customer_reviews_2024_outliers <- get_outlier_rows("agents", "customer_reviews_2024")
+print(customer_reviews_2024_outliers)
+#15 is a high but not unreasonable number of reviews. Leave data as is, but use
+#caution when interpreting results
+
+#population
+population_outliers <- get_outlier_rows("markets", "population")
+print(population_outliers)
+#All population outliers are large metro areas (New York City, Los Angeles, and
+#Chicago). Leave data as is
+
+#price_new_list_median
+price_new_list_median_outliers <- get_outlier_rows("markets", "price_new_list_median")
+print(price_new_list_median_outliers)
+#Outlier new_list_median prices are all in the most expensive cities (Los Angeles,
+#San Francisco, and San Jose) according to "Price-to-Rent Ratio: The Best U.S. Cities for Home Buyers and Renters (2024 Data)" by Jaime Dunaway-Seale on Clever Real Estate.
+#Prices are credible, so leave data as is, but interpret with caution
+
+#price_closed_median
+price_closed_median_outliers <- get_outlier_rows("markets", "price_closed_median")
+print(price_closed_median_outliers)
+#Outlier closed_median prices are the same expensive cities as price_new_list_median
+#outliers. Data is credible, so leave as is
+
+#listings_on_market_count
+listings_on_market_count_outliers <- get_outlier_rows("markets", "listings_on_market_count")
+print(listings_on_market_count_outliers)
+#All outliers are in major metro areas. However, 10% of data are outliers, so
+#interpret with extreme caution. Data should be normalized
+
+#listings_price_increase_count
+listings_price_increase_count_outliers <- get_outlier_rows("markets", "listings_price_increase_count")
+print(listings_price_increase_count_outliers)
+#Both outliers are in large metro areas (Houston and Portland) with a high number
+#total listings. Outliers appear to be accurate, extreme cases. Data should be
+#normalized before interpretation
+
+#listings_price_decrease_count
+listings_price_decrease_count_outliers <- get_outlier_rows("markets", "listings_price_decrease_count")
+print(listings_price_decrease_count_outliers)
+#Outliers are all in large metro areas and likely directly related to large population
+#sizes. Leave data as is
+
+#listings_closed_count
+listings_closed_count_outliers <- get_outlier_rows("markets", "listings_closed_count")
+print(listings_closed_count_outliers)
+#Outliers are in large metro areas and likely a direct result of large population.
+#Leave data as is
+
+#amount
+amount_outliers <- get_outlier_rows("sales", "amount")
+print(amount_outliers)
+#This is likely a data entry error (this sale is over 52 times higher than the #next largest sale). The customer lives in Detroit, MI where the median price #at close is $205,878. It is likely a decimal point was missed during data #entry, and the correct sale price is $395,928.00. The row will be updated #with this repair
+sales <- sales %>%
+  mutate(
+    amount = ifelse(sale_id == 3458, 395928.00, amount)
+  )
+print(sales %>% filter(sale_id == 3458))
+```
+
+```{r consistency_check, include=FALSE}
+#Remove leading and trailing white space and convert all character columns
+#to lower case
+clean_text <- function(df) {
+  df %>%
+    mutate(
+      across(where(is.character), ~ {
+        .x %>%
+          trimws() %>%
+          tolower()
+      })
+    )
+}
+
+df_list_cleaned <- map(df_list, clean_text)
+
+agents <- df_list_cleaned$agents
+calls <- df_list_cleaned$calls
+customers <- df_list_cleaned$customers
+markets <- df_list_cleaned$markets
+sales <- df_list_cleaned$sales
+```
+
+```{r normalization, include=FALSE}
+#Normalize data affected by population
+markets <- markets %>%
+  mutate(
+    #Percentage of listings that saw a price increase
+    increase_rate = listings_price_increase_count / listings_on_market_count,
+    
+    #Percentage of listings that saw a price decrease
+    decrease_rate = listings_price_decrease_count / listings_on_market_count,
+    
+    #Inventory Turnover Rate
+    turnover_rate = listings_closed_count / listings_on_market_count,
+    
+    #Ratio of Price Change Events to Total Listings (for consistency check)
+    price_change_ratio = (listings_price_increase_count + listings_price_decrease_count) / listings_on_market_count
+  )
+```
+
+```{r normalization_outliers, include=FALSE}
+columns_to_check_recheck <- list(
+  agents = c("buyer_customers_sent_2024", "seller_customers_sent_2024",
+             "buyer_closes_2024", "seller_closes_2024", "customer_reviews_2024",
+             "avg_rating_2024"),
+  
+  markets = c("population", "days_on_market_median", "price_new_list_median",
+              "price_closed_median", "listings_on_market_count", "increase_rate",
+              "decrease_rate", "turnover_rate"), 
+  sales = c("amount")
+)
+
+#Update the df_list with the normalized markets df
+df_list$markets <- markets
+
+results_normalized <- imap(df_list, function(df, df_name) {
+  
+  # Use the revised list of columns
+  cols <- columns_to_check_recheck[[df_name]]
+  
+  if (is.null(cols)) {
+    return(NULL)
+  }
+  
+  outlier_results <- map(cols, ~ check_outliers(df, .x))
+  
+  return(outlier_results)
+})
+
+results_normalized <- compact(results_normalized)
+
+# Create a summary table of all outlier counts
+outlier_summary_normalized <- imap_dfr(results_normalized, function(df_res, df_name) {
+  map_dfr(df_res, ~ data.frame(
+    Dataset = df_name,
+    Column = .x$column,
+    Outlier_Count = .x$count,
+    Percent_Outliers = .x$percentage
+  ))
+})
+
+print(outlier_summary_normalized)
+
+#increase_rate outliers
+markets_normalized_results <- results_normalized$markets 
+
+increase_rate_outliers <- map_dfr(markets_normalized_results, function(x) {
+  if (x$column == "increase_rate") {
+    return(x$outlier_rows)
+  }
+})
+print(increase_rate_outliers)
+#Portland, Oregon appears to be an extreme case with anomalously high listing
+#price increases
+
+#decrease_rate outliers
+markets_normalized_results <- results_normalized$markets 
+
+decrease_rate_outliers <- map_dfr(markets_normalized_results, function(x) {
+  if (x$column == "decrease_rate") {
+    return(x$outlier_rows)
+  }
+})
+print(decrease_rate_outliers)
+#Data appears to be accurate but anomalous. New York City is a large, expensive
+#market, so price adjustments may not be unusual. Columbus and Indianapolis
+#have similar populations and similar median days on market, so they may have 
+#faced a systemic market condition (e.g. a market crash in the Midwest) 
+```
+---
+
+# 2. Analysis and Results 📊
+## 2.1 Best Markets 💹
+### 2.1.1 Overall Best Markets 🥇
+To find the best markets, we'll examine a few different factors. First, let's
+see where agents are converting leads into the most sales.
+
+```{r closing_rates, include=FALSE}
+agents <- agents %>%
+  mutate(
+    #Buyer Close Rate
+    buyer_close_rate = case_when(
+      buyer_customers_sent_2024 == 0 ~ 0, # If no customers sent, rate is 0
+      TRUE ~ buyer_closes_2024 / buyer_customers_sent_2024
+    ),
+    
+    #Seller Close Rate
+    seller_close_rate = case_when(
+      seller_customers_sent_2024 == 0 ~ 0, # If no customers sent, rate is 0
+      TRUE ~ seller_closes_2024 / seller_customers_sent_2024
+    )
+  )
+```
+
+```{r market_average_total, include=FALSE}
+#Calculate the market averages and totals
+agent_market_summary <- agents %>%
+  group_by(market_id) %>%
+  summarise(
+    avg_buyer_close_rate = mean(buyer_close_rate, na.rm = TRUE),
+    avg_seller_close_rate = mean(seller_close_rate, na.rm = TRUE),
+    total_raw_closes = sum(buyer_closes_2024, na.rm = TRUE) + 
+      sum(seller_closes_2024, na.rm = TRUE),
+    .groups = 'drop'
+  )
+```
+
+```{r closing_rate_average_chart}
+#Pivot to long format and sort
+agent_market_summary_long <- agent_market_summary %>%
+  # Calculate an overall average for sorting reference
+  mutate(
+    overall_avg_rate = (avg_buyer_close_rate + avg_seller_close_rate) / 2
+  ) %>%
+  #Keep only top 5 markets based on overall average rate
+  arrange(desc(overall_avg_rate)) %>%
+  slice_head(n = 5) %>%
+    #Pivot to long format for ggplot
+  pivot_longer(
+    cols = starts_with("avg_"),
+    names_to = "Close_Rate_Type",
+    values_to = "Rate"
+  ) %>%
+  #Sort markets by overall average rate
+  mutate(
+    market_id = fct_reorder(market_id, Rate, .fun = mean, .desc = FALSE),
+    #Clean up labels for legend/axis
+    Close_Rate_Type = case_match(
+        Close_Rate_Type,
+        "avg_buyer_close_rate" ~ "Buyer Close Rate",
+        "avg_seller_close_rate" ~ "Seller Close Rate"
+    )
+  )
+
+#Create the grouped horizontal bar chart
+rate_bar <- ggplot(agent_market_summary_long, aes(x = Rate, y = market_id, fill = Close_Rate_Type,
+                                   text = paste("Market:", market_id, "<br>",
+                                                Close_Rate_Type, ":", scales::percent(Rate, accuracy = 0.1)))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  
+  #Format x-axis as percentages
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_fill_manual(values = c(
+    "Buyer Close Rate" = "#44b2ef", 
+    "Seller Close Rate" = "#09223d"
+  )) +
+  labs(
+    title = "Average Buyer and Seller Close Rates by Market",
+    subtitle = "Markets sorted by overall average closing performance",
+    x = "Average Close Rate",
+    y = "Market",
+    fill = "Transaction Type"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "top"
+  )
+
+# Convert to Plotly for interactivity
+ggplotly(rate_bar, tooltip = "text")
+```
+Based on closing rates alone, it looks like the best markets are Dallas, 
+Louisville, Raleigh, Nashville, and Cincinnati. But there's more to the story
+than closing rates alone. Lots of factors can affect a market's performance - 
+let's keep digging!
+
+Other important factors to consider are how long property stays on the market,
+the average closing price, the turnover rate, and how often a listing price
+increases.
+
+```{r customer_count, include=FALSE}
+#Calculate total number of customers per market
+customer_market_summary <- customers %>%
+  filter(!is.na(market_id)) %>%
+  group_by(market_id) %>%
+  summarise(
+    total_customers = n_distinct(customer_id),
+    .groups = 'drop'
+  )
+```
+
+```{r agents_customers_markets_join, include=FALSE}
+#Join summary tables
+market_ranking_data <- markets %>%
+  select(
+    market_id, population, days_on_market_median, price_closed_median, 
+    turnover_rate, increase_rate, decrease_rate # Keep decrease_rate for market insights
+  ) %>%
+  left_join(agent_market_summary, by = "market_id") %>%
+  left_join(customer_market_summary, by = "market_id") %>%
+  
+  # Calculate total customers per 1 million people
+  mutate(
+    customer_saturation_rate = total_customers / (population / 1000000)
+  )
+```
+
+When we take all those metrics into account, the best markets seem to be New
+York, Los Angeles, Chicago, Dallas, Houston, and Washington, D.C.
+
+```{r unweighted_table}
+#Prepare the data
+top_markets_table_data <- market_ranking_data %>%
+  # Filter to the 5 most populous markets for a meaningful snapshot
+  arrange(desc(population)) %>%
+  head(5) %>%
+  
+  # Select the most important metrics
+  select(
+    market_id,
+    population,
+    total_customers,
+    days_on_market_median,
+    price_closed_median,
+    increase_rate,
+    avg_buyer_close_rate,
+    avg_seller_close_rate
+  ) %>%
+  
+  # Rename columns for clarity in the final table
+  rename(
+    Market = market_id,
+    Population = population,
+    Customers = total_customers,
+    `Median DoM` = days_on_market_median,
+    `Median Price` = price_closed_median,
+    `Price Increase Rate` = increase_rate,
+    `Avg Buyer Close Rate` = avg_buyer_close_rate,
+    `Avg Seller Close Rate` = avg_seller_close_rate
+  ) %>%
+  
+  # Format the numbers
+  mutate(
+    Population = comma(Population, accuracy = 1),
+    Customers = comma(Customers, accuracy = 1),
+    `Median Price` = dollar(`Median Price`, accuracy = 1),
+    `Price Increase Rate` = percent(`Price Increase Rate`, accuracy = 0.1),
+    `Avg Buyer Close Rate` = percent(`Avg Buyer Close Rate`, accuracy = 0.1),
+    `Avg Seller Close Rate` = percent(`Avg Seller Close Rate`, accuracy = 0.1)
+  )
+
+#Generate table
+top_markets_table_data %>%
+  kbl(caption = "Snapshot of Top 5 Markets by Key Metrics") %>%
+  kable_classic_2(full_width = F, html_font = "Cambria") %>%
+  row_spec(0, bold = T, background = "#f2f2f2")
+```
+
+But, wait! Those are all also large population centers. Let's check where the
+best markets are after we control for population. We can standardize each metric
+and assign an overall performance score to evaluate it independent of population.
+
+```{r scoring, include=FALSE}
+#Select metrics that indicate a "best market"
+ranking_metrics <- market_ranking_data %>%
+  select(
+ #Agent Performance (Higher is better)
+ avg_buyer_close_rate, avg_seller_close_rate, total_raw_closes,
+ #Market Health (Higher is better)
+ turnover_rate, customer_saturation_rate,
+ #Market Opportunity (Higher is better)
+ price_closed_median, increase_rate,
+ #Market Difficulty (Lower is better)
+ days_on_market_median
+ )
+
+#Standardize all metrics and create Z-scores
+standardized_ranking_metrics <- ranking_metrics %>%
+ mutate(across(everything(), scale, .names = "Z_{.col}")) %>%
+ mutate(Z_days_on_market_median = Z_days_on_market_median * -1) %>% #Invert the Z-score
+  
+  #Remove the original raw columns before binding
+  select(starts_with("Z_")) 
+
+#Calculate composite performance score
+market_ranking_final <- market_ranking_data %>%
+ bind_cols(standardized_ranking_metrics) %>% 
+
+ mutate(
+ #Select all columns that start with "Z_"
+ performance_score = rowSums(select(., starts_with("Z_")), na.rm = TRUE)
+ ) %>%
+
+ #Rank and select top 5 markets
+ arrange(desc(performance_score)) %>%
+ mutate(rank = row_number())
+
+# The Top 5 Best Markets
+top_5_markets <- market_ranking_final %>%
+ head(5)
+
+```
+
+```{r table_weighted}
+top_5_score_table_data <- top_5_markets %>%
+  
+  #Ensure data is sorted by rank derived from the performance_score
+  arrange(rank) %>%
+  
+  # 1. Select the new calculated metrics first, followed by the raw metrics
+  select(
+    Rank = rank,                             
+    Score = performance_score,               
+    Market = market_id,
+    Population = population,
+    Customers = total_customers,
+    `Median DoM` = days_on_market_median,
+    `Median Price` = price_closed_median,
+    `Price Increase Rate` = increase_rate,         
+    `Avg Buyer Close Rate` = avg_buyer_close_rate,
+    `Avg Seller Close Rate` = avg_seller_close_rate
+  ) %>%
+  
+  # 2. Format the numbers
+  mutate(
+    Score = round(Score, 2), # Format the calculated score
+    Population = comma(Population, accuracy = 1),
+    Customers = comma(Customers, accuracy = 1),
+    `Median Price` = dollar(`Median Price`, accuracy = 1),
+    `Price Increase Rate` = percent(`Price Increase Rate`, accuracy = 0.1),
+    `Avg Buyer Close Rate` = percent(`Avg Buyer Close Rate`, accuracy = 0.1),
+    `Avg Seller Close Rate` = percent(`Avg Seller Close Rate`, accuracy = 0.1)
+  )
+
+#Generate table
+top_5_score_table_data %>%
+  kbl(caption = "Top 5 Markets by Standardized Composite Performance Score") %>%
+  kable_classic_2(full_width = F, html_font = "Cambria") %>%
+  #Highlight Rank and Score columns
+  column_spec(1, bold = T, background = "#09223d", color = "white") %>%
+  column_spec(2, bold = T, color = "#44b2ef")
+```
+### 2.1.2 Most Efficient Markets 🚀
+
+California and New York still may be overrepresented here. The previous scoring 
+was still weighted heavily to the wealthiest and most densely populated states, 
+despite normalization. But where is Smiley Real Estate most *efficient* rather 
+than merely depending on population and wealth factors? The following analysis 
+weights each factor according to importance: closing rates and customer
+saturation are weighted more highly, while median closing price is weighted
+lower to favor efficiency over property value or population.
+
+```{r efficiency}
+#Create the Z-score columns
+market_ranking_data_scored <- market_ranking_data %>%
+
+  mutate(across(c(avg_buyer_close_rate, avg_seller_close_rate, total_raw_closes, 
+                  turnover_rate, customer_saturation_rate, price_closed_median, 
+                  increase_rate, days_on_market_median), 
+                scale, .names = "Z_{.col}")) %>%
+  
+  #Invert the Z-score for Days on Market
+  mutate(Z_days_on_market_median = Z_days_on_market_median * -1)
+
+#Filter the Z-scores to exclude the raw closes
+market_ranking_final_weighted <- market_ranking_data_scored %>%
+  
+  #Apply new weights to the Z-scores to favor efficiency over wealth and population
+  mutate(
+    performance_score_weighted = 
+      (Z_avg_buyer_close_rate * 1.5) + 
+      (Z_avg_seller_close_rate * 1.5) + 
+      (Z_customer_saturation_rate * 1.5) + 
+      (Z_turnover_rate * 1.0) + 
+      (Z_days_on_market_median * 1.0) +
+      (Z_price_closed_median * 0.5) + 
+      (Z_increase_rate * 1.0)
+  ) %>%
+  arrange(desc(performance_score_weighted)) %>%
+  mutate(rank_weighted = row_number())
+
+# The Top 5 Best Markets For Efficiency
+top_5_markets_weighted <- market_ranking_final_weighted %>%
+  head(5)
+```
+
+```{r table_efficiency}
+efficiency_table_data <- top_5_markets_weighted %>%
+  
+  #Ensure data is sorted by new weighted rank
+  arrange(rank_weighted) %>%
+  
+  #Select the new calculated metrics first, followed by the raw metrics
+  select(
+    Rank = rank_weighted,                     
+    Score = performance_score_weighted,       
+    Market = market_id,
+    Population = population,
+    Customers = total_customers,
+    `Median DoM` = days_on_market_median,
+    `Median Price` = price_closed_median,
+    `Price Increase Rate` = increase_rate,
+    `Avg Buyer Close Rate` = avg_buyer_close_rate,
+    `Avg Seller Close Rate` = avg_seller_close_rate
+  ) %>%
+  
+  #Format the numbers
+  mutate(
+    Score = round(Score, 2), 
+    Population = comma(Population, accuracy = 1),
+    Customers = comma(Customers, accuracy = 1),
+    `Median Price` = dollar(`Median Price`, accuracy = 1),
+    `Price Increase Rate` = percent(`Price Increase Rate`, accuracy = 0.1),
+    `Avg Buyer Close Rate` = percent(`Avg Buyer Close Rate`, accuracy = 0.1),
+    `Avg Seller Close Rate` = percent(`Avg Seller Close Rate`, accuracy = 0.1)
+  )
+
+#Generate table
+efficiency_table_data %>%
+  kbl(caption = "Top 5 Markets by Efficiency-Weighted Score") %>%
+  kable_classic_2(full_width = F, html_font = "Cambria") %>%
+  # Highlight the Rank and Score columns with distinct efficiency colors
+  column_spec(1, bold = T, background = "#09223d", color = "white") %>% 
+  column_spec(2, bold = T, color = "#44b2ef")                      
+```
+
+After accounting for population and high property values, the top 5 markets are
+Grand Rapids, Raleigh, Buffalo, San Jose, and Louisville. These markets have the
+best balance between liquidity (they don't spend a lot of time on the market),
+listing price (with the exception of San Jose, they present a low barrier to 
+entry for a buyer), listing price increase rates, and agent closing rates and 
+thus represent the best opportunity to maximize return on investment (ROI).
+
+### 2.1.3 Market Data Trend 📈📉
+Markets with the highest turnover are the least likely to face spiking listing 
+prices. This suggests that the highest volume markets are highly mature and 
+efficient, so buyers and sellers face less volatility in these markets.
+
+In contrast, price volatility is highest in low turnover markets. These markets 
+may be experiencing "boom" conditions due to a sudden lack of supply or
+short-term enthusiasm, making them riskier. An investor is most likely to find 
+consistent, steady returns - rather than speculative gains - in the 
+high-turnover, low-volatility market.
+
+```{r market_trend_chart, message=FALSE}
+market_ranking_data %>%
+  filter(!is.na(turnover_rate) & !is.na(increase_rate) & !is.na(days_on_market_median)) %>%
+  
+  ggplot(aes(
+    x = turnover_rate,
+    y = increase_rate,
+    color = days_on_market_median #Use DoM for color to see where fast/slow markets fall
+  )) +
+  
+  # Linear trendline
+  geom_smooth(
+    method = "lm", 
+    se = TRUE, 
+    color = "black", 
+    linetype = "dashed", 
+    linewidth = 0.8
+  ) +
+  
+  geom_point(aes(size = 3), alpha = 0.7) + 
+  
+  labs(
+    title = "Market Trend: High Turnover Yields Lower Price Appreciation",
+    subtitle = "Inverse relationship indicates market maturity and efficiency",
+    x = expression("Turnover Rate"),
+    y = expression("Price Increase Rate")
+  ) +
+  
+  #Color scheme
+  scale_color_gradient(
+    low = "#09223d", 
+    high = "#44b2ef", 
+    name = expression("Days on Market")
+  ) + 
+
+  guides(size = "none") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+---
+
+## 2.2 Best Agents️️ 🏋
+
+What makes an agent the best is just as nuanced as what makes a market the best.
+Let's look at some of the key factors! To determine the best agent in each
+market, we'll look at their number of ratings, their average rating, how many
+deals they've closed, and the percentage of leads they've converted to sales.
+
+```{r agent_scoring, include=FALSE}
+#Calculate scoring columns
+agents <- agents %>%
+  mutate(
+    #Weighted rating
+    customer_reviews_2024 = replace_na(customer_reviews_2024, 0),
+    avg_rating_2024 = replace_na(avg_rating_2024, 0),
+    weighted_rating = avg_rating_2024 * sqrt(customer_reviews_2024),
+    
+    #Total raw closes
+    total_raw_closes = buyer_closes_2024 + seller_closes_2024
+  )
+
+#Select metrics and filter out inactive agents
+agent_ranking_metrics <- agents %>%
+  filter(total_raw_closes > 0 | customer_reviews_2024 > 0) %>%
+  select(
+    agent_id, market_id,
+    total_raw_closes, buyer_close_rate, seller_close_rate, 
+    weighted_rating, avg_rating_2024, customer_reviews_2024
+  )
+
+#Standardize and rename Z-scores 
+agent_ranking_zscores <- agent_ranking_metrics %>%
+  select(-market_id) %>% 
+  
+  #Standardize columns
+  mutate(across(c(total_raw_closes:customer_reviews_2024), 
+                scale, .names = "Z_{.col}")) %>%
+  
+  #Keep only agent_id and the Z_ columns
+  select(agent_id, starts_with("Z_")) 
+
+#Join original metrics with Z-scores using agent_id
+agent_ranking_final <- agent_ranking_metrics %>%
+  left_join(agent_ranking_zscores, by = "agent_id") %>%
+  
+  # Calculate the weighted score
+  mutate(
+    performance_score = 
+      (Z_buyer_close_rate * 1.0) + #direct skill at converting leads to sales
+      (Z_seller_close_rate * 1.0) + #direct skill at converting leads to sales
+      (Z_total_raw_closes * 0.75) + #weighted down to mitigate population bias
+      (Z_weighted_rating * 1.25) + #most reliable measure, accounts for small sample size bias
+      (Z_avg_rating_2024 * 0.5) + #weighted down to mitigate small sample size bias
+      (Z_customer_reviews_2024 * 0.5) #measures customer engagement, an indirect measure
+  )
+
+top_agent_per_market <- agent_ranking_final %>%
+  group_by(market_id) %>%
+  #Select the agent with the highest score in each market
+  slice_max(performance_score, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  arrange(desc(performance_score)) %>%
+  #Select relevant columns
+  select(market_id, agent_id, performance_score, 
+         total_raw_closes, buyer_close_rate, seller_close_rate, 
+         weighted_rating, avg_rating_2024, customer_reviews_2024)
+```
+
+```{r agent_table}
+top_10_agents_table <- top_agent_per_market %>%
+ 
+   head(10) %>% 
+  
+  # Select the most important metrics
+  select(
+    Rank = performance_score, 
+    Market = market_id,
+    Agent = agent_id,
+    Score = performance_score,
+    `Weighted Rating` = weighted_rating,
+    `Total Closes` = total_raw_closes,
+    `Buyer Rate` = buyer_close_rate,
+    `Seller Rate` = seller_close_rate,
+    `Total Reviews` = customer_reviews_2024
+  ) %>%
+  
+  # Format the numbers
+  mutate(
+    Rank = row_number(), 
+    Score = round(Score, 2),
+    `Weighted Rating` = round(`Weighted Rating`, 2),
+    `Total Closes` = comma(`Total Closes`, accuracy = 1),
+    `Buyer Rate` = percent(`Buyer Rate`, accuracy = 0.1),
+    `Seller Rate` = percent(`Seller Rate`, accuracy = 0.1),
+    `Total Reviews` = comma(`Total Reviews`, accuracy = 1)
+  ) %>%
+  
+  # Reorder columns to place rank first
+  select(Rank, Market, Agent, everything())
+
+# Generate the HTML table
+top_10_agents_table %>%
+  kbl(caption = "Top 10 Agents by Composite Performance Score (Best Agent from Each Market)") %>%
+  kable_classic_2(full_width = F, html_font = "Cambria") %>%
+  # Highlight the Rank and Score
+  column_spec(1, bold = T, background = "#09223d", color = "white") %>%
+  column_spec(4, bold = T, color = "#44b2ef") %>% # Score
+  column_spec(5, bold = T, color = "#44b2ef") %>% # Weighted Rating
+  row_spec(0, bold = T, background = "#f2f2f2")
+```
+The table above highlights the top 10 agents overall. For a complete listing of 
+the best agent in every market analyzed, the complete, ranked list can be 
+downloaded here:
+  <a href="https://your-company.com/data/best_agents_per_market.csv" target="_blank">Download Full Agent Ranking (CSV)</a>
+ 
+
+ 
+So what makes these agents the best? 
+
+Though the number of customer reviews was weighted down in this analysis, it's 
+clear that customer engagement matters! All but one of the top agents had higher 
+than the average number of customer reviews. The average number of customer
+reviews per agent overall is 4.6, while the top agents had an average of 8.9 
+reviews - almost double the customer engagement rate! 
+
+```{r agent_success_customer_engagement, include=FALSE}
+mean_customer_reviews_2024 <- mean(agents$customer_reviews_2024)
+print(mean_customer_reviews_2024)
+mean_top_agent_customer_reviews_2024 <- 
+  mean(top_agent_per_market$customer_reviews_2024)
+print(mean_top_agent_customer_reviews_2024)
+
+percent_customer_review_2024 <- (sum(top_agent_per_market$customer_reviews_2024 > mean_customer_reviews_2024)/ nrow(top_agent_per_market)) * 100
+print(percent_customer_review_2024)
+```
+
+```{r agent_success_customer_engagement_chart, echo=FALSE}
+colors <- c('#44b2ef', '#09223d')
+
+customer_review_average_compare <- plot_ly(
+  x = c("Average Agents", 
+        "Top Agents"),
+  y = c(mean_customer_reviews_2024, mean_top_agent_customer_reviews_2024),
+  name = "Average Number of Customer Reviews",
+  type = "bar",
+  text = sprintf("%.1f reviews", c(mean_customer_reviews_2024, mean_top_agent_customer_reviews_2024)), 
+  textposition = 'auto',
+  hovertemplate = "%{x} have %{y:.1f} customer reviews<extra></extra>",
+         marker = list(color = colors,line = list(color = 'rgb(8,48,107)', 
+                                                  width = 1.5))
+)
+customer_review_average_compare <- customer_review_average_compare %>% layout(title = "Average Number of Customer Reviews Compared to Top Agents",
+         xaxis = list(title = ""),
+         yaxis = list(title = "")
+)
+
+customer_review_average_compare
+
+customer_review_average_percent <- plot_ly(labels = c("Top Agents Who Exceed Average Number of Ratings", "Other"), values = c(percent_customer_review_2024, (100-percent_customer_review_2024)), 
+                                           type = 'pie',
+                                           marker = list(
+        colors = c('#44b2ef', '#09223d')
+    ),
+    hovertemplate = "%{label}: %{percent}<extra></extra>")
+customer_review_average_percent <- customer_review_average_percent %>% 
+layout(title = 'Top Agents with Higher than Average Number of Reviews',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+customer_review_average_percent
+```
+
+The best agents are also able to maintain a steady volume of customers. Volume
+isn't the main driver, but more (engaged!) customers means more sales! All but 
+two of the top agents closed as many or more sales than average. On average, top
+agents closed 50% more sales than the average agent!
+
+```{r agent_success_volume, include=FALSE}
+mean_total_raw_closes <- mean(agents$total_raw_closes)
+print(mean_total_raw_closes)
+
+mean_top_agent_total_raw_closes <- mean(top_agent_per_market$total_raw_closes)
+print(mean_top_agent_total_raw_closes)
+
+percent_total_raw_closes <- (sum(top_agent_per_market$total_raw_closes > mean_total_raw_closes)/ nrow(top_agent_per_market)) * 100
+print(percent_total_raw_closes)
+```
+```{r agent_success_volume_chart}
+colors <- c('#44b2ef', '#09223d')
+
+total_raw_closes_compare <- plot_ly(
+  x = c("Average Agents", 
+        "Top Agents"),
+  y = c(mean_total_raw_closes, mean_top_agent_total_raw_closes),
+  name = "Average Number of Closed Deals",
+  type = "bar",
+  text = sprintf("%.1f closed deals", c(mean_total_raw_closes, mean_top_agent_total_raw_closes)), 
+  textposition = 'auto',
+  hovertemplate = "%{x} closed %{y:.1f} deals<extra></extra>",
+         marker = list(color = colors,line = list(color = 'rgb(8,48,107)', 
+                                                  width = 1.5))
+)
+total_raw_closes_compare <- total_raw_closes_compare %>% layout(title = 
+                                                                  "Average Number of Closed Deals Compared to Top Agents",
+         xaxis = list(title = ""),
+         yaxis = list(title = "")
+)
+
+total_raw_closes_compare
+
+total_raw_closes_percent <- plot_ly(labels = c("Top Agents Who Exceed Average Number of Closed Deals", "Other"), values = c(percent_total_raw_closes, (100-percent_total_raw_closes)), 
+                                           type = 'pie',
+                                           marker = list(
+        colors = c('#44b2ef', '#09223d')
+    ),
+    hovertemplate = "%{label}: %{percent}<extra></extra>")
+total_raw_closes_percent <- total_raw_closes_percent %>% 
+layout(title = 'Top Agents with Higher than Average Number of Closed Deals',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+total_raw_closes_percent
+```
+Over half of top agents convert more leads into sales than average. The best agents
+are able to close 25-35% more deals than average!
+```{r agent_success_close, include=FALSE}
+mean_buyer_close_rate <- mean(agents$buyer_close_rate)
+mean_seller_close_rate <- mean(agents$seller_close_rate)
+
+print(mean_buyer_close_rate)
+print(mean_seller_close_rate)
+
+mean_top_agent_buyer_close_rate <- mean(top_agent_per_market$buyer_close_rate)
+mean_top_agent_seller_close_rate <- mean(top_agent_per_market$seller_close_rate)
+
+print(mean_top_agent_buyer_close_rate)
+print(mean_top_agent_seller_close_rate)
+
+percent_buyer_close_rate <- (sum(top_agent_per_market$buyer_close_rate > mean_buyer_close_rate)/ nrow(top_agent_per_market)) * 100
+print(percent_buyer_close_rate)
+percent_seller_close_rate <- (sum(top_agent_per_market$seller_close_rate > mean_seller_close_rate)/nrow(top_agent_per_market)) * 100
+print(percent_seller_close_rate)
+```
+
+```{r agent_success_close_chart}
+Categories <- c("Average Agents", "Top Agents")
+Buyer_Rate = c(mean_buyer_close_rate, mean_top_agent_buyer_close_rate)
+Seller_Rate = c(mean_seller_close_rate, mean_top_agent_seller_close_rate)
+data <- data.frame(Categories, Buyer_Rate, Seller_Rate)
+
+# Define colors
+colors <- c('#44b2ef', '#09223d')
+
+total_close_rate_compare <- plot_ly(data,
+    x = ~Categories,
+    y = ~Buyer_Rate,
+    name = "Buyer Close Rate",
+    type = "bar",
+    hovertemplate = "%{x}<br>Buyer Rate: %{y:.1%}<extra></extra>",
+    marker = list(
+        color = colors[1],
+        line = list(color = 'rgb(8,48,107)', width = 1.5)
+    )
+)
+total_close_rate_compare <- total_close_rate_compare %>%
+    add_trace(
+        y = ~Seller_Rate,
+        name = 'Seller Close Rate',
+        hovertemplate = "%{x}<br>Seller Rate: %{y:.1%}<extra></extra>",
+        marker = list(
+            color = colors[2],
+            line = list(color = 'rgb(8,48,107)', width = 1.5)
+        )
+    )
+
+total_close_rate_compare <- total_close_rate_compare %>%
+    layout(
+        title = "Average Close Rate Compared to Top Agents",
+        xaxis = list(title = ""),
+        yaxis = list(
+            title = 'Close Rate',
+            tickformat = '.0%'),
+        barmode = 'group'
+    )
+
+total_close_rate_compare
+
+colors <- c('#229fe6', '#2a4a6a')
+
+percent_buyer_close_rate_chart <- plot_ly(
+    labels = c("Top Agents Exceeding Average Buyer Close Rate", "Other"),
+    values = c(percent_buyer_close_rate, (100 - percent_buyer_close_rate)),
+    type = 'pie',
+    marker = list(colors = colors),
+    hovertemplate = "%{label}: %{percent}<extra></extra>",
+    domain = list(x = c(0, 0.45)),
+    name = "Buyer Rate"
+) %>% layout(title = 'Buyer Close Rate')
+
+percent_seller_close_rate_chart <- plot_ly(
+    labels = c("Top Agents Exceeding Average Seller CloseRate", "Other"),
+    values = c(percent_seller_close_rate, (100 - percent_seller_close_rate)),
+    type = 'pie',
+    marker = list(colors = colors),
+    hovertemplate = "%{label}: %{percent}<extra></extra>",
+    domain = list(x = c(0.55, 1)),
+    name = "Seller Rate"
+) %>% layout(title = 'Seller Close Rate')
+
+combined_pie_charts <- subplot(
+    percent_buyer_close_rate_chart,
+    percent_seller_close_rate_chart,
+    nrows = 1,
+    margin = 0.05
+)
+
+combined_pie_charts <- combined_pie_charts %>%
+    layout(
+        title = 'Percentage of Top Agents Exceeding Average Close Rates',
+        showlegend = FALSE
+    )
+
+combined_pie_charts
+```
+
+The bottom line? The best agents are the ones who can effectively engage with
+a high volume of customers without sacrificing quality. More customers means
+more opportunities, but only if you can keep them happy!
+
+## 2.3 Area for Growth 🪴
+It's tempting to want to stick with what you know - lots of people and an
+expensive market means lots of opportunity for high-commission sales! However,
+there's opportunity beyond wealthy, densely populated markets like New York City 
+and Los Angeles.
+
+As discussed above, New York City and Los Angeles are two of the most successful
+markets right now. However, *highest value* doesn't always mean *most efficient*.
+Investing more resources in high-efficiency markets, like Grand Rapids, MI or
+Raleigh, NC, could lead to higher turnover, the opportunity for more - if 
+smaller - sales, and the chance to connect with more people by being able to
+close more deals in a shorter amount of time.
+
+As a case study, let's compare New York City (a high value market) to Grand 
+Rapids (a highly efficient market).
+
+```{r case_study}
+grand_rapids_price <- markets %>%
+  filter(market_id == "grand_rapids_mi") %>%
+  pull(price_closed_median)
+
+grand_rapids_dom <- markets %>%
+  filter(market_id == "grand_rapids_mi") %>%
+  pull(days_on_market_median)
+
+grand_rapids_turnover <- markets %>%
+  filter(market_id == "grand_rapids_mi") %>%
+  pull(turnover_rate)
+
+new_york_price <- markets %>%
+  filter(market_id == "new_york_ny") %>%
+  pull(price_closed_median)
+
+new_york_dom <- markets %>%
+  filter(market_id == "new_york_ny") %>%
+  pull(days_on_market_median)
+
+new_york_turnover <- markets %>%
+  filter(market_id == "new_york_ny") %>%
+  pull(turnover_rate)
+
+data_case_study <- tibble(
+  Market = c("New York, NY", "Grand Rapids, MI"),
+  Price_Closed_Median = c(new_york_price, grand_rapids_price),
+  Days_On_Market_Median = c(new_york_dom, grand_rapids_dom),
+  Turnover_Rate = c(new_york_turnover, grand_rapids_turnover)
+)
+
+#Raw Market Performance Comparison
+data_long_case_study <- data_case_study %>%
+  pivot_longer(
+    cols = c(Price_Closed_Median, Days_On_Market_Median, Turnover_Rate),
+    names_to = "Metric",
+    values_to = "Value"
+  ) %>%
+  mutate(
+    Metric_Type = case_when(
+      Metric == "Price_Closed_Median" ~ "Price Closed Median ($)",
+      Metric == "Days_On_Market_Median" ~ "Days On Market Median (Days)",
+      Metric == "Turnover_Rate" ~ "Turnover Rate",
+      TRUE ~ Metric
+    )
+  )
+
+raw_market_comparison <- ggplot(data_long_case_study, aes(x = Market, y = Value, fill = Market, text = paste0(Market, "
+", Metric_Type, ": ", format(Value, big.mark = ",", scientific = FALSE)))) +
+  geom_col(position = "dodge") +
+  facet_wrap(~ Metric_Type, scales = "free_y", ncol = 3) +
+  labs(
+    title = "Raw Market Performance Comparison (NY vs GR)",
+    y = "Value",
+    x = ""
+  ) +
+  scale_fill_manual(values = c("New York, NY" = "#2a4a6a", "Grand Rapids, MI" = "#229fe6")) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+chart1 <- ggplotly(raw_market_comparison, tooltip = "text") %>%
+  layout(title = list(text = "Raw Market Performance Comparison (NY vs GR)"))
+
+chart1
+```
+
+New York requires 121% more capital for a transaction than Grand Rapids, 
+significantly hindering liquidity and sales velocity. A property in New York
+will also sit four times longer on average than a property in Grand Rapids. This
+means that a salesperson could theoretically sell four properties in Grand 
+Rapids for the same amount of time and energy it takes to sell just one property
+in New York - based on median sales prices at close, that's a gross transaction 
+value difference of $637,000 in Grand Rapids over New York! With a lower barrier 
+to entry and higher turnover, Grand Rapids has 88% higher market activity than 
+New York. Investing more resources into smaller, highly efficient markets like 
+Grand Rapids will lead to a higher return on investment (ROI) than focusing 
+exclusively on large markets like New York.
+
+---
+# 3. Summary 📋
+
+## 3.1 What If There Was More Time? ⌚
+The analysis could be improved by moving beyond static rate comparisons and into 
+predictive modeling and geospatial segmentation. There are three primary ways I
+would improve the above analysis, given the time and resources.
+
+### 3.1.1 Predictive Agent Performance Modeling
+Instead of only comparing current averages, I would build a model to predict the 
+future success (e.g. close rate, tenure, revenue) of a new agent entering a 
+specific market. This would separate agent quality from market quality. To build 
+a successful model, I would need agent profile data to learn historical agent 
+demographics, training scores, prior industry experience, and agent-specific 
+lead sources. I would also use lead quality metrics to tag leads by source 
+(e.g., paid digital, referral, organic search) and initial qualification score. 
+Lastly, I would use a model output to create a propensity score for each market 
+and agent profile, showing the predicted probability of an agent achieving a 
+top-quartile close rate within 12 months.
+
+### 3.1.2. Geospatial Analysis (Micro-Market Segmentation)
+The current analysis treats each city as a monolithic market. In reality, a 
+massive city like New York is composed of highly distinct micro-markets (e.g. 
+Manhattan vs. Brooklyn vs. Long Island). With more time I could use geospatial
+boundary data to create detailed maps of county, zip code, or neighborhood
+service areas for each transaction. I could then also add more specific local 
+economic indicators like median income, population density, average home sale
+price, and inventory days on market to those micro-markets. With these data, I
+could dive much deeper than the current analysis and visualize data like the top
+ten highest-ROI zip codes, which would enable us to find high efficiency zip
+codes and focus sales to maximize local ROI.
+
+### 3.1.3. Time-Series Analysis
+The current metrics are static averages taken from a snapshot of data. To 
+understand how agent performance, customer saturation, and growth rates 
+fluctuate over time, I could use historical data to track transaction
+volumes, lead flow, agent performance, etc and analyze how those metrics have
+changed over the years. This would provides the necessary context to distinguish 
+a temporary spike from a long-term trend. Having time-stamped external factors 
+like local interest rate data, state or local regulatory changes, or major 
+economic events would also help make the analysis more robust; for example, 
+these data could help explain the outliers in listing price decreases in 
+Columbus and Indianapolis seen above. A time-series analysis could point to any 
+trends in seasonality or other peak performance windows.
+
+## 3.2 How did this report come together?
+The overall process followed the standard data analysis workflow: data cleaning
+and preparation, analytical modeling, and communication. The entire project was 
+executed primarily using R, leveraging packages like tidyverse for data 
+manipulation and ggplot2, plotly, and kableExtra for visualization and 
+reporting.
+
+If the data isn't clean, all of my analyses could give me wildly different 
+results than expected. When I clean data, I make sure to address a few key 
+areas: data type consistency, missingness, potential spelling errors or typos 
+that could lead to aggregation errors, logical tests (e.g. dates shouldn't 
+be in the future), and outliers. One challenge in data cleaning is deciding how 
+to handle data that doesn't pass my checks. Sometimes data can be imputed (e.g. 
+a rating score can be imputed with the median for a dataset like this one with 
+low missingness because it won't introduce skew). Sometimes missing values can 
+be safely deleted. Sometimes outliers are an obvious data entry error, but 
+without access to the source data, that can be hard to verify. Ultimately, I 
+have to use my critical thinking skills to make the best decision for each 
+dataset to maintain data integrity.
+
+After the data is clean, it's on to the fun part! To perform the analyses, I
+think critically about what is being asked and the best metric to answer those
+questions. For this project I primarily used R, but I have also used Python, 
+Excel, SQL, Tableau, and Infogram in other projects.
+
+I started by creating derived metrics like avg_buyer_close_rate and
+customer_saturation_rate by grouping the raw agents and customers data by 
+market_id. This established the foundation for subsequent comparisons.
+
+To compare markets and agents fairly, I used the scale() function in R to 
+convert raw metrics (like median price, close rates, etc.) into Z-scores. This 
+process, called normalization, controlled for the sheer size and wealth of major 
+cities (like New York or Los Angeles), ensuring the resulting scores were based 
+on performance relative to the average, not just the absolute numbers.
+
+I then created the final Composite Performance Scores for both markets and 
+agents by assigning weights to these Z-scores. For example, in the Efficiency 
+Market Analysis, I intentionally gave lower weight to the Z-score for 
+price_closed_median and higher weight to close rates to favor operational 
+efficiency over market wealth. For the Agent Analysis, I gave the highest weight 
+to the weighted_rating to favor agents with proven customer satisfaction.
+
+Finally, I used the ggplot2, plotly, and kableExtra packages to create the 
+visualizations and clean tables, ensuring that the highest performers were 
+easily identifiable.
+
+One of the most significant challenges was the inherent multi-collinearity and 
+size bias in the raw data. My first attempt at ranking the markets showed the 
+largest cities (like New York and Los Angeles) at the top. This analysis was ok, 
+but it seemed shallow and pointed to the fact that data based on population size 
+had not been accounted for well enough, despite previous attempts at 
+normalization. This confirmed that raw size was overpowering other metrics.
+
+I addressed the challenge by enforcing the standardization step and then 
+adjusting the weights (e.g., reducing the weight of volume metrics and 
+increasing the weight of efficiency metrics) to successfully decouple 
+operational success from raw market size.
+
+Analyses don't mean much if no one can understand them. After the analyses, I
+clean up the report. I make sure the report itself is formatted and easy to
+read. I put the finishing touches on all the visualizations to make sure the
+data I want to stand out really pops. Graphic design and intentional formatting
+can go a long way to enhancing communication, especially for subjects that can
+otherwise be dry or tricky to understand.
+
+Throughout the whole process, I make sure my work is saved and backed up. I use
+Github to version control my work, as well as to provide a secondary backup.
