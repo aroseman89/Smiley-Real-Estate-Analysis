@@ -1,5 +1,5 @@
 # Smiley-Real-Estate-Analysis
-Large-scale view of sales performance through most of 2025
+A compact data-analysis project that explores a large-scale view of sales performance through most of 2025 and residential real estate trends and provides reproducible scripts and notebooks for cleaning, analysis, and visualization.
 
 ## Repository Contents
 | File Name | Description | Purpose |
