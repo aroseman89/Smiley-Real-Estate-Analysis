@@ -1003,6 +1003,8 @@ percent_customer_review_2024 <- (sum(top_agent_per_market$customer_reviews_2024 
 print(percent_customer_review_2024)
 ```
 
+<br>
+
 ```{r agent_success_customer_engagement_chart, echo=FALSE}
 colors <- c('#44b2ef', '#09223d')
 
@@ -1036,7 +1038,7 @@ customer_review_average_percent <- plot_ly(labels = c("Top Agents Who Exceed Ave
 customer_review_average_percent <- customer_review_average_percent %>% 
 layout(title = '<b>Top Agents with Higher than Average Number of Reviews</b>',
        margin = list(
-               t = 100 
+               t = 125 
            ),
          xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
          yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
@@ -1065,6 +1067,8 @@ print(mean_top_agent_total_raw_closes)
 percent_total_raw_closes <- (sum(top_agent_per_market$total_raw_closes > mean_total_raw_closes)/ nrow(top_agent_per_market)) * 100
 print(percent_total_raw_closes)
 ```
+
+<br>
 
 ```{r agent_success_volume_chart}
 colors <- c('#44b2ef', '#09223d')
@@ -1098,9 +1102,17 @@ total_raw_closes_percent <- plot_ly(labels = c("Top Agents Who Exceed Average Nu
                                          texttemplate = '<b>%{percent}</b>',
     hovertemplate = "<b>%{label}:</b> %{percent}<extra></extra>")
 total_raw_closes_percent <- total_raw_closes_percent %>% 
-layout(title = '<b>Top Agents with Higher than Average Number of Closed Deals</b>',
+layout(
+  title = '<b>Top Agents with Higher than Average Number of Closed Deals</b>',
          xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+  margin = list(
+  t=125),
+       legend = list(
+         orientation = "h", 
+    x = 0.5,             
+    y = -0.2,
+    xanchor = "center"))
 
 total_raw_closes_percent
 ```
@@ -1138,12 +1150,19 @@ data <- data.frame(Categories, Buyer_Rate, Seller_Rate)
 # Define colors
 colors <- c('#44b2ef', '#09223d')
 
+#Define text labels for the bars
+buyer_text_labels <- paste0("<b>",round(data$Buyer_Rate * 100, 1), "%</b>")
+seller_text_labels <- paste0("<b>", round(data$Seller_Rate * 100, 1), "%</b>")
+
 total_close_rate_compare <- plot_ly(data,
     x = ~Categories,
     y = ~Buyer_Rate,
     name = "Buyer Close Rate",
     type = "bar",
-    hovertemplate = "%{x}<br>Buyer Rate: %{y:.1%}<extra></extra>",
+    hovertemplate = "<b>%{x}<br>Buyer Rate:</b> %{y:.1%}<extra></extra>",
+    text = buyer_text_labels,
+    textposition = 'outside',
+    textfont = list(weight = 'bold', size = 12),
     marker = list(
         color = colors[1],
         line = list(color = 'rgb(8,48,107)', width = 1.5)
@@ -1153,7 +1172,10 @@ total_close_rate_compare <- total_close_rate_compare %>%
     add_trace(
         y = ~Seller_Rate,
         name = 'Seller Close Rate',
-        hovertemplate = "%{x}<br>Seller Rate: %{y:.1%}<extra></extra>",
+        hovertemplate = "<b>%{x}<br>Seller Rate:</b> %{y:.1%}<extra></extra>",
+        text = seller_text_labels,
+        textposition = 'outside',
+        textfont = list(weight = 'bold', size = 12),
         marker = list(
             color = colors[2],
             line = list(color = 'rgb(8,48,107)', width = 1.5)
@@ -1162,12 +1184,41 @@ total_close_rate_compare <- total_close_rate_compare %>%
 
 total_close_rate_compare <- total_close_rate_compare %>%
     layout(
-        title = "Average Close Rate Compared to Top Agents",
-        xaxis = list(title = ""),
+        title = "<b>Average Close Rate Compared to Top Agents</b>",
+        xaxis = list(title = "", showticklabels = FALSE),
         yaxis = list(
-            title = 'Close Rate',
+            title = '<b>Close Rate</b>',
             tickformat = '.0%'),
-        barmode = 'group'
+        barmode = 'group',
+legend = list(
+            orientation = 'h',
+            y = -0.2, 
+            x = 0.5, 
+            xanchor = 'center',
+            font = list(weight = 'bold')
+        ),
+annotations = list(
+            list(
+                x = "Average Agents", 
+                y = 0, # Position below the bar, adjust if needed
+                text = "<b>Average Agents</b>", 
+                showarrow = FALSE, 
+                xref = "x", 
+                yref = "paper", 
+                yanchor = "top",
+                yshift = -30 # Adjust vertical position 
+            ),
+            list(
+                x = "Top Agents", 
+                y = 0, 
+                text = "<b>Top Agents</b>", 
+                showarrow = FALSE, 
+                xref = "x", 
+                yref = "paper",
+                yanchor = "top",
+                yshift = -30 # Adjust vertical position
+            )
+        )
     )
 
 total_close_rate_compare
@@ -1179,20 +1230,28 @@ percent_buyer_close_rate_chart <- plot_ly(
     values = c(percent_buyer_close_rate, (100 - percent_buyer_close_rate)),
     type = 'pie',
     marker = list(colors = colors),
-    hovertemplate = "%{label}: %{percent}<extra></extra>",
+    hovertemplate = "<b>%{label}:</b> %{percent}<extra></extra>",
     domain = list(x = c(0, 0.45)),
-    name = "Buyer Rate"
-) %>% layout(title = 'Buyer Close Rate')
+    name = "Buyer Rate",
+    textinfo = 'percent',
+    textfont = list(weight = 'bold', size = 12),
+    texttemplate = '<b>%{percent}</b>',
+    textposition = 'inside'
+) %>% layout(title = '<b>Buyer Close Rate</b>')
 
 percent_seller_close_rate_chart <- plot_ly(
     labels = c("Top Agents Exceeding Average Seller CloseRate", "Other"),
     values = c(percent_seller_close_rate, (100 - percent_seller_close_rate)),
     type = 'pie',
     marker = list(colors = colors),
-    hovertemplate = "%{label}: %{percent}<extra></extra>",
+    hovertemplate = "<b>%{label}:</b> %{percent}<extra></extra>",
     domain = list(x = c(0.55, 1)),
-    name = "Seller Rate"
-) %>% layout(title = 'Seller Close Rate')
+    name = "Seller Rate",
+    textinfo = 'percent',
+    textfont = list(weight = 'bold', size = 12),
+    texttemplate = '<b>%{percent}</b>',
+    textposition = 'inside'
+) %>% layout(title = '<b>Seller Close Rate</b>')
 
 combined_pie_charts <- subplot(
     percent_buyer_close_rate_chart,
@@ -1203,7 +1262,7 @@ combined_pie_charts <- subplot(
 
 combined_pie_charts <- combined_pie_charts %>%
     layout(
-        title = 'Percentage of Top Agents Exceeding Average Close Rates',
+        title = '<b>Percentage of Top Agents Exceeding Average Close Rates</b>',
         showlegend = FALSE
     )
 
@@ -1256,7 +1315,7 @@ new_york_turnover <- markets %>%
   pull(turnover_rate)
 
 data_case_study <- tibble(
-  Market = c("New York, NY", "Grand Rapids, MI"),
+  Market = c("<b>New York, NY</b>", "<b>Grand Rapids, MI</b>"),
   Price_Closed_Median = c(new_york_price, grand_rapids_price),
   Days_On_Market_Median = c(new_york_dom, grand_rapids_dom),
   Turnover_Rate = c(new_york_turnover, grand_rapids_turnover)
@@ -1278,22 +1337,51 @@ data_long_case_study <- data_case_study %>%
     )
   )
 
-raw_market_comparison <- ggplot(data_long_case_study, aes(x = Market, y = Value, fill = Market, text = paste0(Market, "
-", Metric_Type, ": ", format(Value, big.mark = ",", scientific = FALSE)))) +
+#Define conditional formatting for the hover text
+data_long_case_study_formatted <- data_long_case_study %>%
+  mutate(
+    Formatted_Value_Hover = case_when(
+      Metric == "Price_Closed_Median" ~ paste0("$", format(round(Value, 0), big.mark = ",", scientific = FALSE, trim = TRUE)),
+      Metric == "Days_On_Market_Median" ~ paste0(format(round(Value, 0), big.mark = ",", scientific = FALSE, trim = TRUE), " days"),
+      Metric == "Turnover_Rate" ~ paste0(format(round(Value * 100, 2), big.mark = ",", scientific = FALSE, trim = TRUE, nsmall = 2), "%"),
+      TRUE ~ as.character(Value)
+    )
+  )
+
+raw_market_comparison <- ggplot(data_long_case_study_formatted, aes(x = Market, y = Value, fill = Market, text = paste0("<b>", Market, "</b>\n", 
+                         "<b>", Metric_Type, ": </b>", 
+                         Formatted_Value_Hover))) +
   geom_col(position = "dodge") +
-  facet_wrap(~ Metric_Type, scales = "free_y", ncol = 3) +
+  geom_text(aes(y = Value * 0.09,
+                label = paste0("<b>", case_when(
+      Metric == "Price_Closed_Median" ~ format(round(Value, 0), big.mark = ",", scientific = FALSE, trim = TRUE),
+      Metric == "Days_On_Market_Median" ~ format(round(Value, 0), big.mark = ",", scientific = FALSE, trim = TRUE),
+      Metric == "Turnover_Rate" ~ paste0(format(round(Value * 100, 2), big.mark = ",", scientific = FALSE, trim = TRUE, nsmall = 2), "%"),
+      TRUE ~ format(Value)
+    ), "</b>")),
+    position = position_dodge(width = 0.9),
+    vjust = 1, 
+    size = 3,
+    fontface = "bold"
+  ) +
+  scale_y_continuous(labels = scales::comma) +
+  facet_wrap(~ Metric_Type, scales = "free_y", ncol = 2) +
   labs(
-    title = "Raw Market Performance Comparison (NY vs GR)",
-    y = "Value",
+    title = "<b>Raw Market Performance Comparison (NY vs GR)</b>",
+    y = "",
     x = ""
   ) +
-  scale_fill_manual(values = c("New York, NY" = "#2a4a6a", "Grand Rapids, MI" = "#229fe6")) +
+  scale_fill_manual(values = c("<b>New York, NY</b>" = "#2a4a6a", "<b>Grand Rapids, MI</b>" = "#229fe6")) +
   theme_minimal() +
   theme(legend.position = "none",
-        axis.text.x = element_text(angle = 45, hjust = 1))
+        axis.text.x = element_text(angle = 0, hjust = 0.5, face = "bold"),
+        axis.text.y = element_text(face = "bold"),
+        plot.title = element_text(face = "bold"),
+    strip.text = element_text(face = "bold"),
+    axis.title = element_text(face = "bold"))
 
 chart1 <- ggplotly(raw_market_comparison, tooltip = "text") %>%
-  layout(title = list(text = "Raw Market Performance Comparison (NY vs GR)"))
+  layout(title = list(text = "<b>Raw Market Performance Comparison (NY vs GR)</b>"))
 
 chart1
 ```
@@ -1355,7 +1443,7 @@ these data could help explain the outliers in listing price decreases in
 Columbus and Indianapolis seen above. A time-series analysis could point to any 
 trends in seasonality or other peak performance windows.
 
-## 3.2 How did this report come together?
+## 3.2 How did this report come together? 🤝
 The overall process followed the standard data analysis workflow: data cleaning
 and preparation, analytical modeling, and communication. The entire project was 
 executed primarily using R, leveraging packages like tidyverse for data 
