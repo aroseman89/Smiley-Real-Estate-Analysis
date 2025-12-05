@@ -12,3 +12,4 @@ Large-scale view of sales performance through most of 2025
 | **markets.csv** | Raw dataset that provides information on the fifty markets served by Smiley Real Estate. | Input data for market analysis.|
 | **sales.csv** | Raw dataset that indicates the time of a successful sale, identifying the CustomerID, the time of the sale, and the value of the property sold. | Input data for sales analysis. |
 | **Clever Real Estate Working Interview Project.Rmd** | The **R Markdown** script containing all data cleaning, scoring models, visualizations, and conclusions. | The executable source code for the entire analysis and the final deliverable. |
+| **Clever-Real-Estate-Working-Interview-Project.html** | The **HTML** report generated from the R Markdown file containing all visualizations and conclusions. | The final deliverable for the stakeholders. |
