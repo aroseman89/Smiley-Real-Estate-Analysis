@@ -39,9 +39,9 @@ sales <- read_csv("C:/Users/alyss/OneDrive/Job applications/Clever Real Estate W
 # 1. Data Cleaning and Preparation 🧹
 This first section is about cleaning and preparing the data. It's not very
 interesting and isn't very nice to look at, so it's hidden from this report.
-However, feel free to scroll through the R Markdown file on Github and take a 
-look at the notes I left about why I made the corrections I did. But for now,
-let's get straight to the fun part!
+However, feel free to [view the complete code](Clever Real Estate Working Interview Project.Rmd) to see the full cleaning steps and take a look at the notes I left 
+about why I made the corrections I did. But for now, let's get straight to the 
+fun part!
 
 ```{r data_cleaning, include=FALSE}
 str(agents)
@@ -1510,3 +1510,4 @@ otherwise be dry or tricky to understand.
 
 Throughout the whole process, I make sure my work is saved and backed up. I use
 Github to version control my work, as well as to provide a secondary backup.
+
