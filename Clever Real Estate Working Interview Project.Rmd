@@ -821,14 +821,13 @@ efficient, so buyers and sellers face less volatility in these markets.
 In contrast, low turnover markets have the highest price volatility. These 
 markets may be experiencing "boom" conditions due to a sudden lack of supply or
 short-term enthusiasm, making them riskier. An investor is most likely to find 
-consistent, steady returns - rather than speculative gains - in the high-
-turnover, low-volatility market.
+consistent, steady returns - rather than speculative gains - in the high-turnover, low-volatility market.
 
-```{r market_trend_chart, message=FALSE}
-market_ranking_data %>%
+```{r market_trend_chart, echo=FALSE, message=FALSE}
+market_trend_chart <- market_ranking_data %>%
   filter(!is.na(turnover_rate) & !is.na(increase_rate) & !is.na(days_on_market_median)) %>%
   
-  ggplot(aes(
+ ggplot(aes(
     x = turnover_rate,
     y = increase_rate,
     color = days_on_market_median #Use DoM for color to see where fast/slow markets fall
@@ -862,6 +861,20 @@ market_ranking_data %>%
   guides(size = "none") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+ggplotly(
+  market_trend_chart, 
+  tooltip = c("x", "y", "color")
+) %>%
+  style(
+    text = paste0(
+      "<b>Market ID:</b> ", market_ranking_data$market_id, "<br>",
+      "<b>Turnover Rate:</b> ", round(market_ranking_data$turnover_rate * 100, 1), "%", "<br>",
+      "<b>Price Increase Rate:</b> ", round(market_ranking_data$increase_rate * 100, 1), "%", "<br>",
+      "<b>Days on Market:</b> ", round(market_ranking_data$days_on_market_median, 0)
+    ),
+    hoverinfo = "text"
+  )
 ```
 ---
 
@@ -976,7 +989,7 @@ top_10_agents_table %>%
 ```
 <small>The table above highlights the top 10 agents overall. For a complete 
 listing of the best agent in every market analyzed, the complete, ranked list 
-can be downloaded here: [Download Full Agent Ranking (CSV)](best_agents_per_market.csv)</small>
+can be downloaded [here](best_agents_per_market.csv).</small>
  
 ```{r full_agent_ranking, include=FALSE}
 write.csv(top_agent_per_market, 
