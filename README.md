@@ -18,7 +18,7 @@ A compact data-analysis project that explores a large-scale view of sales perfor
 - (Optional) RStudio for an IDE with a Knit button: https://posit.co/download/
 - Required R packages: `rmarkdown`, `readr`, `tidyverse`, `rlang`, `purrr`, `plotly`, `knitr`, `kableExtra`, `scales`, `stringr`
 
-Render from R (recommended) <br>
+*Render from R (recommended)* <br>
 Open R or RStudio and run:
 ```r
 rmarkdown::render("path/to/report.Rmd")
