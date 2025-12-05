@@ -956,12 +956,15 @@ top_10_agents_table %>%
   column_spec(5, bold = T, color = "#44b2ef") %>% # Weighted Rating
   row_spec(0, bold = T, background = "#f2f2f2")
 ```
-The table above highlights the top 10 agents overall. For a complete listing of 
-the best agent in every market analyzed, the complete, ranked list can be 
-downloaded here:
-  <a href="https://your-company.com/data/best_agents_per_market.csv" target="_blank">Download Full Agent Ranking (CSV)</a>
+<small>The table above highlights the top 10 agents overall. For a complete 
+listing of the best agent in every market analyzed, the complete, ranked list 
+can be downloaded here: [Download Full Agent Ranking (CSV)](best_agents_per_market.csv)</small>
  
-
+```{r full_agent_ranking, include=FALSE}
+write.csv(top_agent_per_market, 
+          file = "best_agents_per_market.csv", 
+          row.names = FALSE)
+```
  
 So what makes these agents the best? 
 
@@ -1069,8 +1072,10 @@ layout(title = 'Top Agents with Higher than Average Number of Closed Deals',
 
 total_raw_closes_percent
 ```
+
 Over half of top agents convert more leads into sales than average. The best agents
 are able to close 25-35% more deals than average!
+
 ```{r agent_success_close, include=FALSE}
 mean_buyer_close_rate <- mean(agents$buyer_close_rate)
 mean_seller_close_rate <- mean(agents$seller_close_rate)
