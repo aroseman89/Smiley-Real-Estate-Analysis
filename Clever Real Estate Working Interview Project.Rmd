@@ -28,6 +28,8 @@ library(scales)
 ```
 
 ```{r import, include=FALSE}
+#Note: Update all file paths for your directory.
+
 agents <- read_csv("C:/Users/alyss/OneDrive/Job applications/Clever Real Estate Working Interview/agents.csv")
 calls <- read_csv("C:/Users/alyss/OneDrive/Job applications/Clever Real Estate Working Interview/calls.csv")
 customers <- read_csv("C:/Users/alyss/OneDrive/Job applications/Clever Real Estate Working Interview/customers.csv")
@@ -1442,3 +1444,4 @@ I addressed the challenge by enforcing the standardization step and then adjusti
 Analyses don't mean much if no one can understand them. After the analyses, I clean up the report. I make sure the report itself is formatted and easy to read. I put the finishing touches on all the visualizations to make sure the data I want to stand out really pops. Graphic design and intentional formatting can go a long way to enhancing communication, especially for subjects that can otherwise be dry or tricky to understand.
 
 Throughout the whole process, I make sure my work is saved and backed up. I use Github to version control my work, as well as to provide a secondary backup.
+
