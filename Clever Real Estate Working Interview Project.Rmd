@@ -1014,7 +1014,7 @@ top_10_agents_table %>%
   column_spec(5, bold = T, color = "#44b2ef") %>% # Weighted Rating
   row_spec(0, bold = T, background = "#f2f2f2")
 ```
-<small>The table above highlights the top 10 agents overall. For a complete listing of the best agent in every market analyzed, the complete, ranked list can be downloaded [here](best_agents_per_market.csv).</small>
+<small>The table above highlights the top 10 agents overall. For a complete listing of the best agent in every market analyzed, the complete, ranked list can be viewed [here](https://github.com/aroseman89/Smiley-Real-Estate-Analysis/blob/main/best_agents_per_market.csv).</small>
  
 ```{r full_agent_ranking, include=FALSE}
 write.csv(top_agent_per_market, 
@@ -1444,4 +1444,5 @@ I addressed the challenge by enforcing the standardization step and then adjusti
 Analyses don't mean much if no one can understand them. After the analyses, I clean up the report. I make sure the report itself is formatted and easy to read. I put the finishing touches on all the visualizations to make sure the data I want to stand out really pops. Graphic design and intentional formatting can go a long way to enhancing communication, especially for subjects that can otherwise be dry or tricky to understand.
 
 Throughout the whole process, I make sure my work is saved and backed up. I use Github to version control my work, as well as to provide a secondary backup.
+
 
