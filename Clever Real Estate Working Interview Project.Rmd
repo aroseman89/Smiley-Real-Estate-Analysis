@@ -512,7 +512,7 @@ rate_bar <- ggplot(agent_market_summary_long, aes(x = Rate, y = market_id, fill 
                                                 "<b>", Close_Rate_Type, ":</b>", scales::percent(Rate, accuracy = 0.1)))) +
   geom_bar(stat = "identity", position = "dodge") +
   geom_text(
-    aes(x = 0.015, label = scales::percent(Rate, accuracy = .1)), 
+    aes(x = 0.015, label = paste0("<b>", scales::percent(Rate, accuracy = .1), "</b>")), 
     position = position_dodge(width = 0.9),
     hjust = 0,                                                  
     color = "white",                                            
@@ -526,24 +526,27 @@ rate_bar <- ggplot(agent_market_summary_long, aes(x = Rate, y = market_id, fill 
     "Seller Close Rate" = "#09223d"
   )) +
   labs(
-    title = "Average Buyer and Seller Close Rates by Market",
-    subtitle = "Markets sorted by overall average closing performance",
+    title = "<b>Average Buyer and Seller Close Rates by Market<b>",
     x = "Average Close Rate",
-    y = "Market",
+    y = "",
     fill = "Transaction Type"
   ) +
   theme_minimal() +
   theme(
-    legend.position = "bottom"
+    legend.position = "bottom",
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
   )
 
 # Convert to Plotly for interactivity
 ggplotly(rate_bar, tooltip = "text") %>%
 plotly::layout(legend = list(
     orientation = "h", 
-    x = 0.1,             
-    y = -0.2          
-  ))
+    x = 0.5,             
+    y = -0.2,
+    xanchor = "center"
+  )
+  )
 ```
 Based on closing rates alone, it looks like the best markets are Dallas, 
 Louisville, Raleigh, Nashville, and Cincinnati. But there's more to the story
@@ -802,23 +805,24 @@ efficiency_table_data %>%
   column_spec(2, bold = T, color = "#44b2ef")                      
 ```
 
-After accounting for population and high property values, the top 5 markets are
-Grand Rapids, Raleigh, Buffalo, San Jose, and Louisville. These markets have the
-best balance between liquidity (they don't spend a lot of time on the market),
-listing price (with the exception of San Jose, they present a low barrier to 
-entry for a buyer), listing price increase rates, and agent closing rates and 
-thus represent the best opportunity to maximize return on investment (ROI).
+After accounting for population and high property values, the top five markets 
+are Grand Rapids, Raleigh, Buffalo, San Jose, and Louisville. These markets have 
+the best balance between liquidity (they don't spend a lot of time on the 
+market), listing price (with the exception of San Jose, they present a low 
+barrier to entry for a buyer), listing price increase rates, and agent closing 
+rates, and thus represent the best opportunity to maximize return on investment 
+(ROI).
 
 ### 2.1.3 Market Data Trend 📈📉
 Markets with the highest turnover are the least likely to face spiking listing 
 prices. This suggests that the highest volume markets are highly mature and 
 efficient, so buyers and sellers face less volatility in these markets.
 
-In contrast, price volatility is highest in low turnover markets. These markets 
-may be experiencing "boom" conditions due to a sudden lack of supply or
+In contrast, low turnover markets have the highest price volatility. These 
+markets may be experiencing "boom" conditions due to a sudden lack of supply or
 short-term enthusiasm, making them riskier. An investor is most likely to find 
-consistent, steady returns - rather than speculative gains - in the 
-high-turnover, low-volatility market.
+consistent, steady returns - rather than speculative gains - in the high-
+turnover, low-volatility market.
 
 ```{r market_trend_chart, message=FALSE}
 market_ranking_data %>%
@@ -1412,4 +1416,3 @@ otherwise be dry or tricky to understand.
 
 Throughout the whole process, I make sure my work is saved and backed up. I use
 Github to version control my work, as well as to provide a secondary backup.
-
