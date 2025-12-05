@@ -3,10 +3,10 @@ A compact data-analysis project that explores a large-scale view of sales perfor
 
 ## Instructions
 **Final deliverable**
-The primary deliverable for this submission is a single HTML report. Reviewers can open the HTML in a browser with no code execution required.
+      <br> The primary deliverable for this submission is a single HTML report. Reviewers can open the HTML in a browser with no code execution required.
 
 **Quick instructions**
-*Open the HTML file (no R required)*
+    - *Open the HTML file (no R required)*
 1. Find the HTML file in the repository (Clever-Real-Estate-Working-Interview-Project.html)
 2. Download and open locally:
     - Option A: Click the file in GitHub, click "Raw", then Save As to download the `.html` file. Double-click the saved file to open in your browser.
