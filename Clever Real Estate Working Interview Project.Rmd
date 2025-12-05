@@ -833,7 +833,7 @@ market_trend_chart <- market_ranking_data %>%
     color = days_on_market_median #Use DoM for color to see where fast/slow markets fall
   )) +
   
-  # Linear trendline
+  #Linear trendline
   geom_smooth(
     method = "lm", 
     se = TRUE, 
@@ -844,23 +844,30 @@ market_trend_chart <- market_ranking_data %>%
   
   geom_point(aes(size = 3), alpha = 0.7) + 
   
+  scale_x_continuous(labels = percent_format(accuracy = 1)) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  
   labs(
     title = "Market Trend: High Turnover Yields Lower Price Appreciation",
     subtitle = "Inverse relationship indicates market maturity and efficiency",
-    x = expression("Turnover Rate"),
-    y = expression("Price Increase Rate")
+    x = "Turnover Rate", 
+    y = "Price Increase Rate"
   ) +
   
   #Color scheme
   scale_color_gradient(
     low = "#09223d", 
     high = "#44b2ef", 
-    name = expression("Days on Market")
+    name = "Days on Market"
   ) + 
 
   guides(size = "none") +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
+  )
 
 ggplotly(
   market_trend_chart, 
@@ -873,7 +880,29 @@ ggplotly(
       "<b>Price Increase Rate:</b> ", round(market_ranking_data$increase_rate * 100, 1), "%", "<br>",
       "<b>Days on Market:</b> ", round(market_ranking_data$days_on_market_median, 0)
     ),
-    hoverinfo = "text"
+    hoverinfo = "text",
+  colorbar = list(
+      orientation = "h",        
+      x = 0.5,                  
+      y = -0.15,                
+      xanchor = "center",
+      yanchor = "top",
+      len = 0.7,                
+      title = list(
+        text = "<b>Days on Market</b>",
+        side = "top",
+        font = list(
+          weight = "bold"
+      )
+    )
+  )
+) %>%
+  layout(
+    title = list(
+      xanchor = "left", 
+      x = 0
+    ),
+    margin = list(l = 50) 
   )
 ```
 ---
