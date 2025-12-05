@@ -38,11 +38,7 @@ sales <- read_csv("C:/Users/alyss/OneDrive/Job applications/Clever Real Estate W
 ---
 
 # 1. Data Cleaning and Preparation 🧹
-This first section is about cleaning and preparing the data. It's not very
-interesting and isn't very nice to look at, so it's hidden from this report.
-However, feel free to [view the complete code](Clever Real Estate Working Interview Project.Rmd) to see the full cleaning steps and take a look at the notes I left 
-about why I made the corrections I did. But for now, let's get straight to the 
-fun part!
+This first section is about cleaning and preparing the data. It's not very interesting and isn't very nice to look at, so it's hidden from this report. However, feel free to [view the complete code](Clever Real Estate Working Interview Project.Rmd) to see the full cleaning steps and take a look at the notes I left about why I made the corrections I did. But for now, let's get straight to the fun part!
 
 ```{r data_cleaning, include=FALSE}
 str(agents)
@@ -50,6 +46,32 @@ str(calls)
 str(customers)
 str(markets)
 str(sales)
+```
+
+```{r spell_check, include=FALSE}
+#Check unique id values to look for typos
+agent_id_check <- unique(agents$agent_id)
+#1000 elements and 1000 rows of raw data - all ids are unique
+agent_market_id_check <- unique(agents$market_id)
+#51 elements
+call_id_check <- unique(calls$call_id)
+#175359 elements and 175359 rows of raw data - all ids are unique
+customer_id_check <- unique(customers$customer_id)
+#50000 elements and 50000 rows of raw data - all ids are unique
+customer_market_id_check <- unique(customers$market_id)
+#50 elements <- there is an conflict with the number of market_ids
+#In looking at unique entries, agents$market_id contains the erroneous "orlando_fla"
+#Correct entry to "orlando_fl"
+agents$market_id <- str_replace(string = agents$market_id, pattern = "_fla", replacement = "_fl")
+#Rechecking agents$market_id - now contains 50 elements and matches customers$market_id
+market_market_id_check <- unique(markets$market_id)
+#50 elements - matches expectations established above
+market_census_name_check <- unique(markets$census_name)
+#50 elements - matches expectations
+market_common_name_check <- unique(markets$common_name)
+#50 elements - matches expectations
+sale_id_check <- unique(sales$sale_id)
+#14172 elements and 14172 rows of raw data - all ids are unique
 ```
 
 ```{r data_type_correct, include=FALSE}
@@ -447,8 +469,7 @@ print(decrease_rate_outliers)
 # 2. Analysis and Results 📊
 ## 2.1 Best Markets 💹
 ### 2.1.1 Overall Best Markets 🥇
-To find the best markets, we'll examine a few different factors. First, let's
-see where agents are converting leads into the most sales.
+To find the best markets, we'll examine a few different factors. First, let's see where agents are converting leads into the most sales.
 
 ```{r closing_rates, include=FALSE}
 agents <- agents %>%
@@ -549,14 +570,9 @@ plotly::layout(legend = list(
   )
   )
 ```
-Based on closing rates alone, it looks like the best markets are Dallas, 
-Louisville, Raleigh, Nashville, and Cincinnati. But there's more to the story
-than just closing rates. Lots of factors can affect a market's performance - 
-let's keep digging!
+Based on closing rates alone, it looks like the best markets are Dallas, Louisville, Raleigh, Nashville, and Cincinnati. But there's more to the story than just closing rates. Lots of factors can affect a market's performance – let's keep digging!
 
-Other important factors to consider are how long property stays on the market 
-(DoM), the average closing price, the turnover rate, and how often a listing 
-price increases.
+Other important factors to consider are how long property stays on the market (DoM), the average closing price, the turnover rate, and how often a listing price increases.
 
 ```{r customer_count, include=FALSE}
 #Calculate total number of customers per market
@@ -585,8 +601,7 @@ market_ranking_data <- markets %>%
   )
 ```
 
-When we take all those metrics into account, the best markets seem to be New
-York, Los Angeles, Chicago, Dallas, Houston, and Washington, D.C.
+When we take all those metrics into account, the best markets seem to be New York, Los Angeles, Chicago, Dallas, Houston, and Washington, D.C.
 
 ```{r unweighted_table}
 #Prepare the data
@@ -636,9 +651,7 @@ top_markets_table_data %>%
   row_spec(0, bold = T, background = "#f2f2f2")
 ```
 
-But, wait! Those are all also large population centers. Let's check where the
-best markets are after we control for population. We can standardize each metric
-and assign an overall performance score to evaluate it independent of population.
+But, wait! Those are all also large population centers. Let's check where the best markets are after we control for population. We can standardize each metric and assign an overall performance score to evaluate it independent of population.
 
 ```{r scoring, include=FALSE}
 #Select metrics that indicate a "best market"
@@ -723,13 +736,7 @@ top_5_score_table_data %>%
 ```
 ### 2.1.2 Most Efficient Markets 🚀
 
-California and (and New York, to a lesser extent) still may be overrepresented 
-here. The previous scoring was still weighted heavily to the wealthiest and most 
-densely populated states, despite normalization. But where is Smiley Real Estate 
-most *efficient* rather than merely depending on population and wealth factors? 
-The following analysis weights each factor according to importance: closing 
-rates and customer saturation are weighted more highly, while median closing 
-price is weighted lower to favor efficiency over property value or population.
+California and (and New York, to a lesser extent) still may be overrepresented  here. The previous scoring was still weighted heavily to the wealthiest and most densely populated states, despite normalization. But where is Smiley Real Estate most *efficient* rather than merely depending on population and wealth factors? The following analysis weights each factor according to importance: closing rates and customer saturation are weighted more highly, while median closing price is weighted lower to favor efficiency over property value or population.
 
 ```{r efficiency}
 #Create the Z-score columns
@@ -806,23 +813,14 @@ efficiency_table_data %>%
   column_spec(2, bold = T, color = "#44b2ef")                      
 ```
 
-After accounting for population and high property values, the top five markets 
-are Grand Rapids, Raleigh, Buffalo, San Jose, and Louisville. These markets have 
-the best balance between liquidity (they don't spend a lot of time on the 
-market), listing price (with the exception of San Jose, they present a low 
-barrier to entry for a buyer), listing price increase rates, and agent closing 
-rates, and thus represent the best opportunity to maximize return on investment 
-(ROI).
+After accounting for population and high property values, the top five markets are Grand Rapids, Raleigh, Buffalo, San Jose, and Louisville. These markets have the best balance between liquidity (they don't spend a lot of time on the market), listing price (with the exception of San Jose, they present a low barrier to entry for a buyer), listing price increase rates, and agent closing rates, and thus represent the best opportunity to maximize return on investment (ROI).
 
 ### 2.1.3 Market Data Trend 📈📉
-Markets with the highest turnover are the least likely to face spiking listing 
-prices. This suggests that the highest volume markets are highly mature and 
-efficient, so buyers and sellers face less volatility in these markets.
+Markets with the highest turnover are the least likely to face spiking listing prices. This suggests that the highest volume markets are highly mature and efficient, so buyers and sellers face less volatility in these markets.
 
-In contrast, low turnover markets have the highest price volatility. These 
-markets may be experiencing "boom" conditions due to a sudden lack of supply or
-short-term enthusiasm, making them riskier. An investor is most likely to find 
-consistent, steady returns – rather than speculative gains – in the high-turnover, low-volatility market.
+In contrast, low turnover markets have the highest price volatility. These markets may be experiencing "boom" conditions due to a sudden lack of supply or short-term enthusiasm, making them riskier. An investor is most likely to find consistent, steady returns – rather than speculative gains – in the high-turnover, low-volatility market.
+
+One notable exception is Portland, OR. Despite having a moderate turnover rate, Portland exhibits an anomalously high rate of listing price increases (noted as an outlier in the cleaning section and as seen on the chart). This extreme volatility, in contrast to the typical market maturity trend, suggests that Portland's price appreciation may be driven by external, non-liquidity factors (such as regulatory constraints or unique geographic supply issues). For an investor, this market represents high potential reward but with significantly less predictability than other high-turnover markets.
 
 ```{r market_trend_chart, echo=FALSE, message=FALSE}
 market_trend_chart <- market_ranking_data %>%
@@ -910,10 +908,7 @@ ggplotly(
 
 ## 2.2 Best Agents️️ 🏋
 
-What makes an agent the best is just as nuanced as what makes a market the best.
-Let's look at some of the key factors! To determine the best agent in each
-market, we'll look at their number of ratings, their average rating, how many
-deals they've closed, and the percentage of leads they've converted to sales.
+What makes an agent the best is just as nuanced as what makes a market the best. Let's look at some of the key factors! To determine the best agent in each market, we'll look at their number of ratings, their average rating, how many deals they've closed, and the percentage of leads they've converted to sales.
 
 ```{r agent_scoring, include=FALSE}
 #Calculate scoring columns
@@ -1017,9 +1012,7 @@ top_10_agents_table %>%
   column_spec(5, bold = T, color = "#44b2ef") %>% # Weighted Rating
   row_spec(0, bold = T, background = "#f2f2f2")
 ```
-<small>The table above highlights the top 10 agents overall. For a complete 
-listing of the best agent in every market analyzed, the complete, ranked list 
-can be downloaded [here](best_agents_per_market.csv).</small>
+<small>The table above highlights the top 10 agents overall. For a complete listing of the best agent in every market analyzed, the complete, ranked list can be downloaded [here](best_agents_per_market.csv).</small>
  
 ```{r full_agent_ranking, include=FALSE}
 write.csv(top_agent_per_market, 
@@ -1029,11 +1022,7 @@ write.csv(top_agent_per_market,
  
 So what makes these agents the best? 
 
-Though the number of customer reviews was weighted down in this analysis, it's 
-clear that customer engagement matters! All but one of the top agents had higher 
-than the average number of customer reviews. The average number of customer
-reviews per agent overall is 4.6, while the top agents had an average of 8.9 
-reviews - almost double the customer engagement rate! 
+Though the number of customer reviews was weighted down in this analysis, it's clear that customer engagement matters! All but one of the top agents had higher than the average number of customer reviews. The average number of customer reviews per agent overall is 4.6, while the top agents had an average of 8.9 reviews – almost double the customer engagement rate! 
 
 ```{r agent_success_customer_engagement, include=FALSE}
 mean_customer_reviews_2024 <- mean(agents$customer_reviews_2024)
@@ -1095,10 +1084,7 @@ customer_review_average_percent
 ```
 <br>
 
-The best agents are also able to maintain a steady volume of customers. Volume
-isn't the main driver, but more (engaged!) customers means more sales! All but 
-two of the top agents closed as many or more sales than average. On average, top
-agents closed 50% more sales than the average agent!
+The best agents are also able to maintain a steady volume of customers. Volume isn't the main driver, but more (engaged!) customers means more sales! All but two of the top agents closed as many or more sales than average. On average, top agents closed 50% more sales than the average agent!
 
 ```{r agent_success_volume, include=FALSE}
 mean_total_raw_closes <- mean(agents$total_raw_closes)
@@ -1160,8 +1146,7 @@ layout(
 total_raw_closes_percent
 ```
 
-Over half of top agents convert more leads into sales than average. The best agents
-are able to close 25-35% more deals than average!
+Over half of top agents convert more leads into sales than average. The best agents are able to close 25-35% more deals than average!
 
 <br>
 
@@ -1311,25 +1296,14 @@ combined_pie_charts <- combined_pie_charts %>%
 
 combined_pie_charts
 ```
-The bottom line? The best agents are the ones who can effectively engage with
-a high volume of customers without sacrificing quality. More customers means
-more opportunities, but only if you can keep them happy!
+The bottom line? The best agents are the ones who can effectively engage with a high volume of customers without sacrificing quality. More customers means more opportunities, but only if you can keep them happy!
 
 ## 2.3 Area for Growth 🪴
-It's tempting to want to stick with what you know – lots of people and an
-expensive market means lots of opportunity for high-commission sales! However,
-there's opportunity beyond wealthy, densely populated markets like New York City 
-and Los Angeles.
+It's tempting to want to stick with what you know – lots of people and an expensive market means lots of opportunity for high-commission sales! However, there's opportunity beyond wealthy, densely populated markets like New York City and Los Angeles.
 
-As discussed above, New York City and Los Angeles are two of the most successful
-markets right now. However, *highest value* doesn't always mean *most efficient*.
-Investing more resources in high-efficiency markets, like Grand Rapids, MI or
-Raleigh, NC, could lead to higher turnover, the opportunity for more – if 
-smaller – sales, and the chance to connect with more people by being able to
-close more deals in a shorter amount of time.
+As discussed above, New York City and Los Angeles are two of the most successful markets right now. However, *highest value* doesn't always mean *most efficient*. Investing more resources in high-efficiency markets, like Grand Rapids, MI or Raleigh, NC, could lead to higher turnover, the opportunity for more – if smaller – sales, and the chance to connect with more people by being able to close more deals in a shorter amount of time.
 
-As a case study, let's compare New York City (a high value market) to Grand 
-Rapids (a highly efficient market).
+As a case study, let's compare New York City (a high value market) to Grand Rapids (a highly efficient market).
 
 ```{r case_study}
 grand_rapids_price <- markets %>%
@@ -1395,17 +1369,18 @@ raw_market_comparison <- ggplot(data_long_case_study_formatted, aes(x = Market, 
                          Formatted_Value_Hover))) +
   geom_col(position = "dodge") +
   geom_text(aes(y = Value * 0.09,
-                label = paste0("<b>", case_when(
-      Metric == "Price_Closed_Median" ~ format(round(Value, 0), big.mark = ",", scientific = FALSE, trim = TRUE),
-      Metric == "Days_On_Market_Median" ~ format(round(Value, 0), big.mark = ",", scientific = FALSE, trim = TRUE),
-      Metric == "Turnover_Rate" ~ paste0(format(round(Value * 100, 2), big.mark = ",", scientific = FALSE, trim = TRUE, nsmall = 2), "%"),
-      TRUE ~ format(Value)
-    ), "</b>")),
-    position = position_dodge(width = 0.9),
-    vjust = 1, 
-    size = 3,
-    fontface = "bold"
-  ) +
+ label = paste0("<b>", case_when(
+Metric == "Price_Closed_Median" ~ paste0("$", format(round(Value, 0), big.mark = ",", scientific = FALSE, trim = TRUE)),
+Metric == "Days_On_Market_Median" ~ paste0(format(round(Value, 0), big.mark = ",", scientific = FALSE, trim = TRUE), " days"),
+Metric == "Turnover_Rate" ~ paste0(format(round(Value * 100, 2), big.mark = ",", scientific = FALSE, trim = TRUE, nsmall = 2), "%"),
+ TRUE ~ format(Value)
+ ), "</b>")),
+ position = position_dodge(width = 0.9),
+ vjust = 1,
+ size = 3,
+fontface = "bold",
+    color = "white" # Retained white color from previous step
+ ) +
   scale_y_continuous(labels = scales::comma) +
   facet_wrap(~ Metric_Type, scales = "free_y", ncol = 2) +
   labs(
@@ -1428,127 +1403,42 @@ chart1 <- ggplotly(raw_market_comparison, tooltip = "text") %>%
 chart1
 ```
 
-New York requires 121% more capital for a transaction than Grand Rapids, 
-significantly hindering liquidity and sales velocity. A property in New York
-will also sit four times longer on average than a property in Grand Rapids. This
-means that a salesperson could theoretically sell four properties in Grand 
-Rapids for the same amount of time and energy it takes to sell just one property
-in New York – based on median sales prices at close, that's a gross transaction 
-value difference of $637,000 in Grand Rapids over New York! With a lower barrier 
-to entry and higher turnover, Grand Rapids has 88% higher market activity than 
-New York. Investing more resources into smaller, highly efficient markets like 
-Grand Rapids will lead to a higher ROI than focusing exclusively on large 
-markets like New York.
+New York requires 121% more capital for a transaction than Grand Rapids, significantly hindering liquidity and sales velocity. A property in New York will also sit four times longer on average than a property in Grand Rapids. This means that a salesperson could theoretically sell four properties in Grand Rapids for the same amount of time and energy it takes to sell just one property in New York – based on median sales prices at close, that's a gross transaction value difference of $637,000 in Grand Rapids over New York! With a lower barrier to entry and higher turnover, Grand Rapids has 88% higher market activity than New York. Investing more resources into smaller, highly efficient markets like Grand Rapids will lead to a higher ROI than focusing exclusively on large markets like New York.
 
 ---
 # 3. Summary 📋
 
 ## 3.1 What If There Was More Time? ⌚
-The analysis could be improved by moving beyond static rate comparisons and into 
-predictive modeling and geospatial segmentation. There are three primary ways I
-would improve the above analysis, given the time and resources.
+The analysis could be improved by moving beyond static rate comparisons and into predictive modeling and geospatial segmentation. There are three primary ways I would improve the above analysis, given the time and resources.
 
 ### 3.1.1 Predictive Agent Performance Modeling
-Instead of only comparing current averages, I would build a model to predict the 
-future success (e.g. close rate, tenure, revenue) of a new agent entering a 
-specific market. This would separate agent quality from market quality. To build 
-a successful model, I would need agent profile data to learn historical agent 
-demographics, training scores, prior industry experience, and agent-specific 
-lead sources. I would also use lead quality metrics to tag leads by source 
-(e.g., paid digital, referral, organic search) and initial qualification score. 
-Lastly, I would use a model output to create a propensity score for each market 
-and agent profile, showing the predicted probability of an agent achieving a 
-top-quartile close rate within 12 months.
+Instead of only comparing current averages, I would build a model to predict the future success (e.g. close rate, tenure, revenue) of a new agent entering a specific market. This would separate agent quality from market quality. To build a successful model, I would need agent profile data to learn historical agent demographics, training scores, prior industry experience, and agent-specific lead sources. I would also use lead quality metrics to tag leads by source (e.g., paid digital, referral, organic search) and initial qualification score. Lastly, I would use a model output to create a propensity score for each market and agent profile, showing the predicted probability of an agent achieving a top-quartile close rate within 12 months.
 
 ### 3.1.2. Geospatial Analysis (Micro-Market Segmentation)
-The current analysis treats each city as a monolithic market. In reality, a 
-massive city like New York is composed of highly distinct micro-markets (e.g. 
-Manhattan vs. Brooklyn vs. Long Island). With more time I could use geospatial
-boundary data to create detailed maps of county, zip code, or neighborhood
-service areas for each transaction. I could then also add more specific local 
-economic indicators like median income, population density, average home sale
-price, and inventory days on market to those micro-markets. With these data, I
-could dive much deeper than the current analysis and visualize data like the top
-ten highest-ROI zip codes, which would enable us to find high efficiency zip
-codes and focus sales to maximize local ROI.
+The current analysis treats each city as a monolithic market. In reality, a city like New York is composed of highly distinct micro-markets (e.g. Manhattan vs. Brooklyn vs. Long Island). With more time I could use geospatial boundary data to create detailed maps of county, zip code, or neighborhood service areas for each transaction. I could then also add more specific local economic indicators like median income, population density, average home sale price, and inventory days on market to those micro-markets. With these data, I could dive much deeper than the current analysis. For example, I could visualize data like the top ten highest-ROI zip codes, which would enable us to find high efficiency zip codes and focus sales to maximize local ROI.
 
 ### 3.1.3. Time-Series Analysis
-The current metrics are static averages taken from a snapshot of data. To 
-understand how agent performance, customer saturation, and growth rates 
-fluctuate over time, I could use historical data to track transaction
-volumes, lead flow, agent performance, etc and analyze how those metrics have
-changed over the years. This would provide the necessary context to distinguish 
-a temporary spike from a long-term trend. Having time-stamped external factors 
-like local interest rate data, state or local regulatory changes, or major 
-economic events would also help make the analysis more robust; for example, 
-these data could help explain the outliers in listing price decreases in 
-Columbus and Indianapolis seen above. A time-series analysis could point to any 
-trends in seasonality or other peak performance windows.
+The current metrics are static averages taken from a snapshot of data. To understand how agent performance, customer saturation, and growth rates fluctuate over time, I could use historical data to track transaction volumes, lead flow, agent performance, etc and analyze how those metrics have changed over the years. This would provide the necessary context to distinguish a temporary spike from a long-term trend. Having time-stamped external factors like local interest rate data, state or local regulatory changes, or major economic events would also help make the analysis more robust; for example, these data could help explain the outliers in listing price decreases in Columbus and Indianapolis (for more details, see the outliers section in the cleaning portion of the [complete code](Clever Real Estate Working Interview Project.Rmd)). A time-series analysis could point to any trends in seasonality or other peak performance windows.
 
 ## 3.2 How did this report come together? 📜
-The overall process followed the standard data analysis workflow: data cleaning
-and preparation, analytical modeling, and communication. The entire project was 
-executed primarily using R, leveraging packages like tidyverse for data 
-manipulation and ggplot2, plotly, and kableExtra for visualization and 
-reporting.
+The overall process followed the standard data analysis workflow: data cleaning and preparation, analytical modeling, and communication. The entire project was executed primarily using R, leveraging packages like tidyverse for data manipulation and ggplot2, plotly, and kableExtra for visualization and reporting.
 
-If the data isn't clean, all of my analyses could give me wildly different 
-results than expected. When I clean data, I make sure to address a few key 
-areas: data type consistency, missingness, potential spelling errors or typos 
-that could lead to aggregation errors, logical tests (e.g. dates shouldn't 
-be in the future), and outliers. One challenge in data cleaning is deciding how 
-to handle data that doesn't pass my checks. Sometimes data can be imputed (e.g. 
-a rating score can be imputed with the median for a dataset like this one with 
-low missingness because it won't introduce skew). Sometimes missing values can 
-be safely deleted. Sometimes outliers are an obvious data entry error, but 
-without access to the source data, that can be hard to verify. Ultimately, I 
-have to use my critical thinking skills to make the best decision for each 
-dataset to maintain data integrity.
+If the data isn't clean, all of my analyses could give me wildly different results than expected. When I clean data, I make sure to address a few key areas: data type consistency, missingness, potential spelling errors or typos that could lead to aggregation errors, logical tests (e.g. dates shouldn't be in the future), and outliers. One challenge in data cleaning is deciding how to handle data that doesn't pass my checks. Sometimes data can be imputed (e.g. a rating score can be imputed with the median for a dataset like this one with low missingness because it won't introduce skew). Sometimes missing values can be safely deleted. Sometimes outliers are an obvious data entry error, but without access to the source data, that can be hard to verify. Ultimately, I have to use my critical thinking skills to make the best decision for each dataset to maintain data integrity.
 
-After the data is clean, it's on to the fun part! To perform the analyses, I
-think critically about what is being asked and the best metric to answer those
-questions. For this project I primarily used R, but I have also used Python, 
-Excel, SQL, Tableau, and Infogram in other projects.
+After the data is clean, it's on to the fun part! To perform the analyses, I think critically about what is being asked and the best metric to answer those questions. For this project I primarily used R, but I have also used Python, Excel, SQL, Tableau, and Infogram in other projects.
 
-I started by creating derived metrics like avg_buyer_close_rate and
-customer_saturation_rate by grouping the raw agents and customers data by 
-market_id. This established the foundation for subsequent comparisons.
+I started by creating derived metrics like avg_buyer_close_rate and customer_saturation_rate by grouping the raw agents and customers data by market_id. This established the foundation for subsequent comparisons.
 
-To compare markets and agents fairly, I used the scale() function in R to 
-convert raw metrics (like median price, close rates, etc.) into Z-scores. This 
-process, called normalization, controlled for the sheer size and wealth of major 
-cities (like New York or Los Angeles), ensuring the resulting scores were based 
-on performance relative to the average, not just the absolute numbers.
+To compare markets and agents fairly, I used the scale() function in R to convert raw metrics (like median price, close rates, etc.) into Z-scores. This process, called normalization, controlled for the sheer size and wealth of major cities (like New York or Los Angeles), ensuring the resulting scores were based on performance relative to the average, not just the absolute numbers.
 
-I then created the final Composite Performance Scores for both markets and 
-agents by assigning weights to these Z-scores. For example, in the Efficiency 
-Market Analysis, I intentionally gave lower weight to the Z-score for 
-price_closed_median and higher weight to close rates to favor operational 
-efficiency over market wealth. For the Agent Analysis, I gave the highest weight 
-to the weighted_rating to favor agents with proven customer satisfaction.
+I then created the final Composite Performance Scores for both markets and agents by assigning weights to these Z-scores. For example, in the Efficiency Market Analysis, I intentionally gave lower weight to the Z-score for price_closed_median and higher weight to close rates to favor operational efficiency over market wealth. For the Agent Analysis, I gave the highest weight to the weighted_rating to favor agents with proven customer satisfaction.
 
-Finally, I used the ggplot2, plotly, and kableExtra packages to create the 
-visualizations and clean tables, ensuring that the highest performers were 
-easily identifiable.
+Finally, I used the ggplot2, plotly, and kableExtra packages to create the visualizations and clean tables, ensuring that the highest performers were easily identifiable.
 
-One of the most significant challenges was the inherent multi-collinearity and 
-size bias in the raw data. My first attempt at ranking the markets showed the 
-largest cities (like New York and Los Angeles) at the top. This analysis was ok, 
-but it seemed shallow and pointed to the fact that data based on population size 
-had not been accounted for well enough, despite previous attempts at 
-normalization. This confirmed that raw size was overpowering other metrics.
+One of the most significant challenges was the inherent multi-collinearity and size bias in the raw data. My first attempt at ranking the markets showed the largest cities (like New York and Los Angeles) at the top. This analysis was ok, but it seemed shallow and pointed to the fact that data based on population size had not been accounted for well enough, despite previous attempts at normalization. This confirmed that raw size was overpowering other metrics.
 
-I addressed the challenge by enforcing the standardization step and then 
-adjusting the weights (e.g., reducing the weight of volume metrics and 
-increasing the weight of efficiency metrics) to successfully decouple 
-operational success from raw market size.
+I addressed the challenge by enforcing the standardization step and then adjusting the weights (e.g., reducing the weight of volume metrics and increasing the weight of efficiency metrics) to successfully decouple operational success from raw market size.
 
-Analyses don't mean much if no one can understand them. After the analyses, I
-clean up the report. I make sure the report itself is formatted and easy to
-read. I put the finishing touches on all the visualizations to make sure the
-data I want to stand out really pops. Graphic design and intentional formatting
-can go a long way to enhancing communication, especially for subjects that can
-otherwise be dry or tricky to understand.
+Analyses don't mean much if no one can understand them. After the analyses, I clean up the report. I make sure the report itself is formatted and easy to read. I put the finishing touches on all the visualizations to make sure the data I want to stand out really pops. Graphic design and intentional formatting can go a long way to enhancing communication, especially for subjects that can otherwise be dry or tricky to understand.
 
-Throughout the whole process, I make sure my work is saved and backed up. I use
-Github to version control my work, as well as to provide a secondary backup.
+Throughout the whole process, I make sure my work is saved and backed up. I use Github to version control my work, as well as to provide a secondary backup.
