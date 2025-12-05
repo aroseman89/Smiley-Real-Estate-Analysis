@@ -1,5 +1,5 @@
 # Smiley-Real-Estate-Analysis
-A compact data-analysis project that explores a large-scale view of sales performance through most of 2025 and residential real estate trends and provides reproducible scripts and notebooks for cleaning, analysis, and visualization.
+A compact data-analysis project that explores a large-scale view of sales performance through most of 2025 and residential real estate trends. Provides reproducible scripts and notebooks for cleaning, analysis, and visualization.
 
 ## Instructions
 **Final deliverable**
