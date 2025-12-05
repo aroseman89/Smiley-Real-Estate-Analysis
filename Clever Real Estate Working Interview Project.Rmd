@@ -6,6 +6,7 @@ output:
   html_document:
     toc: true
     toc_float: true
+    width: 350px
     section_autonumber: true
     theme: readable
 ---
@@ -553,9 +554,9 @@ Louisville, Raleigh, Nashville, and Cincinnati. But there's more to the story
 than just closing rates. Lots of factors can affect a market's performance - 
 let's keep digging!
 
-Other important factors to consider are how long property stays on the market,
-the average closing price, the turnover rate, and how often a listing price
-increases.
+Other important factors to consider are how long property stays on the market 
+(DoM), the average closing price, the turnover rate, and how often a listing 
+price increases.
 
 ```{r customer_count, include=FALSE}
 #Calculate total number of customers per market
@@ -821,7 +822,7 @@ efficient, so buyers and sellers face less volatility in these markets.
 In contrast, low turnover markets have the highest price volatility. These 
 markets may be experiencing "boom" conditions due to a sudden lack of supply or
 short-term enthusiasm, making them riskier. An investor is most likely to find 
-consistent, steady returns - rather than speculative gains - in the high-turnover, low-volatility market.
+consistent, steady returns – rather than speculative gains – in the high-turnover, low-volatility market.
 
 ```{r market_trend_chart, echo=FALSE, message=FALSE}
 market_trend_chart <- market_ranking_data %>%
@@ -1310,13 +1311,12 @@ combined_pie_charts <- combined_pie_charts %>%
 
 combined_pie_charts
 ```
-
 The bottom line? The best agents are the ones who can effectively engage with
 a high volume of customers without sacrificing quality. More customers means
 more opportunities, but only if you can keep them happy!
 
 ## 2.3 Area for Growth 🪴
-It's tempting to want to stick with what you know - lots of people and an
+It's tempting to want to stick with what you know – lots of people and an
 expensive market means lots of opportunity for high-commission sales! However,
 there's opportunity beyond wealthy, densely populated markets like New York City 
 and Los Angeles.
@@ -1324,8 +1324,8 @@ and Los Angeles.
 As discussed above, New York City and Los Angeles are two of the most successful
 markets right now. However, *highest value* doesn't always mean *most efficient*.
 Investing more resources in high-efficiency markets, like Grand Rapids, MI or
-Raleigh, NC, could lead to higher turnover, the opportunity for more - if 
-smaller - sales, and the chance to connect with more people by being able to
+Raleigh, NC, could lead to higher turnover, the opportunity for more – if 
+smaller – sales, and the chance to connect with more people by being able to
 close more deals in a shorter amount of time.
 
 As a case study, let's compare New York City (a high value market) to Grand 
@@ -1433,12 +1433,12 @@ significantly hindering liquidity and sales velocity. A property in New York
 will also sit four times longer on average than a property in Grand Rapids. This
 means that a salesperson could theoretically sell four properties in Grand 
 Rapids for the same amount of time and energy it takes to sell just one property
-in New York - based on median sales prices at close, that's a gross transaction 
+in New York – based on median sales prices at close, that's a gross transaction 
 value difference of $637,000 in Grand Rapids over New York! With a lower barrier 
 to entry and higher turnover, Grand Rapids has 88% higher market activity than 
 New York. Investing more resources into smaller, highly efficient markets like 
-Grand Rapids will lead to a higher return on investment (ROI) than focusing 
-exclusively on large markets like New York.
+Grand Rapids will lead to a higher ROI than focusing exclusively on large 
+markets like New York.
 
 ---
 # 3. Summary 📋
@@ -1477,7 +1477,7 @@ The current metrics are static averages taken from a snapshot of data. To
 understand how agent performance, customer saturation, and growth rates 
 fluctuate over time, I could use historical data to track transaction
 volumes, lead flow, agent performance, etc and analyze how those metrics have
-changed over the years. This would provides the necessary context to distinguish 
+changed over the years. This would provide the necessary context to distinguish 
 a temporary spike from a long-term trend. Having time-stamped external factors 
 like local interest rate data, state or local regulatory changes, or major 
 economic events would also help make the analysis more robust; for example, 
