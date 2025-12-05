@@ -508,9 +508,16 @@ agent_market_summary_long <- agent_market_summary %>%
 
 #Create the grouped horizontal bar chart
 rate_bar <- ggplot(agent_market_summary_long, aes(x = Rate, y = market_id, fill = Close_Rate_Type,
-                                   text = paste("Market:", market_id, "<br>",
-                                                Close_Rate_Type, ":", scales::percent(Rate, accuracy = 0.1)))) +
+                                   text = paste("<b>Market:</b>", market_id, "<br>", 
+                                                "<b>", Close_Rate_Type, ":</b>", scales::percent(Rate, accuracy = 0.1)))) +
   geom_bar(stat = "identity", position = "dodge") +
+  geom_text(
+    aes(x = 0.015, label = scales::percent(Rate, accuracy = .1)), 
+    position = position_dodge(width = 0.9),
+    hjust = 0,                                                  
+    color = "white",                                            
+    size = 3.5
+  ) +
   
   #Format x-axis as percentages
   scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
@@ -527,11 +534,16 @@ rate_bar <- ggplot(agent_market_summary_long, aes(x = Rate, y = market_id, fill 
   ) +
   theme_minimal() +
   theme(
-    legend.position = "top"
+    legend.position = "bottom"
   )
 
 # Convert to Plotly for interactivity
-ggplotly(rate_bar, tooltip = "text")
+ggplotly(rate_bar, tooltip = "text") %>%
+plotly::layout(legend = list(
+    orientation = "h", 
+    x = 0.1,             
+    y = -0.2          
+  ))
 ```
 Based on closing rates alone, it looks like the best markets are Dallas, 
 Louisville, Raleigh, Nashville, and Cincinnati. But there's more to the story
