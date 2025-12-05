@@ -547,7 +547,7 @@ plotly::layout(legend = list(
 ```
 Based on closing rates alone, it looks like the best markets are Dallas, 
 Louisville, Raleigh, Nashville, and Cincinnati. But there's more to the story
-than closing rates alone. Lots of factors can affect a market's performance - 
+than just closing rates. Lots of factors can affect a market's performance - 
 let's keep digging!
 
 Other important factors to consider are how long property stays on the market,
@@ -712,6 +712,7 @@ top_5_score_table_data <- top_5_markets %>%
 top_5_score_table_data %>%
   kbl(caption = "Top 5 Markets by Standardized Composite Performance Score") %>%
   kable_classic_2(full_width = F, html_font = "Cambria") %>%
+  row_spec(0, bold = T, background = "#f2f2f2") %>%
   #Highlight Rank and Score columns
   column_spec(1, bold = T, background = "#09223d", color = "white") %>%
   column_spec(2, bold = T, color = "#44b2ef")
@@ -795,6 +796,7 @@ efficiency_table_data <- top_5_markets_weighted %>%
 efficiency_table_data %>%
   kbl(caption = "Top 5 Markets by Efficiency-Weighted Score") %>%
   kable_classic_2(full_width = F, html_font = "Cambria") %>%
+  row_spec(0, bold = T, background = "#f2f2f2") %>%
   # Highlight the Rank and Score columns with distinct efficiency colors
   column_spec(1, bold = T, background = "#09223d", color = "white") %>% 
   column_spec(2, bold = T, color = "#44b2ef")                      
