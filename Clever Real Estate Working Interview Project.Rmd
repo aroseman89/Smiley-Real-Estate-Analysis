@@ -722,13 +722,13 @@ top_5_score_table_data %>%
 ```
 ### 2.1.2 Most Efficient Markets 🚀
 
-California and New York still may be overrepresented here. The previous scoring 
-was still weighted heavily to the wealthiest and most densely populated states, 
-despite normalization. But where is Smiley Real Estate most *efficient* rather 
-than merely depending on population and wealth factors? The following analysis 
-weights each factor according to importance: closing rates and customer
-saturation are weighted more highly, while median closing price is weighted
-lower to favor efficiency over property value or population.
+California and (and New York, to a lesser extent) still may be overrepresented 
+here. The previous scoring was still weighted heavily to the wealthiest and most 
+densely populated states, despite normalization. But where is Smiley Real Estate 
+most *efficient* rather than merely depending on population and wealth factors? 
+The following analysis weights each factor according to importance: closing 
+rates and customer saturation are weighted more highly, while median closing 
+price is weighted lower to favor efficiency over property value or population.
 
 ```{r efficiency}
 #Create the Z-score columns
@@ -1443,7 +1443,7 @@ these data could help explain the outliers in listing price decreases in
 Columbus and Indianapolis seen above. A time-series analysis could point to any 
 trends in seasonality or other peak performance windows.
 
-## 3.2 How did this report come together? 🤝
+## 3.2 How did this report come together? 📜
 The overall process followed the standard data analysis workflow: data cleaning
 and preparation, analytical modeling, and communication. The entire project was 
 executed primarily using R, leveraging packages like tidyverse for data 
@@ -1510,4 +1510,3 @@ otherwise be dry or tricky to understand.
 
 Throughout the whole process, I make sure my work is saved and backed up. I use
 Github to version control my work, as well as to provide a secondary backup.
-
