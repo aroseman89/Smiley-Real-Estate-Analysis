@@ -1003,12 +1003,12 @@ print(percent_customer_review_2024)
 colors <- c('#44b2ef', '#09223d')
 
 customer_review_average_compare <- plot_ly(
-  x = c("Average Agents", 
-        "Top Agents"),
+  x = c("<b>Average Agents</b>", 
+        "<b>Top Agents</b>"),
   y = c(mean_customer_reviews_2024, mean_top_agent_customer_reviews_2024),
   name = "Average Number of Customer Reviews",
   type = "bar",
-  text = sprintf("%.1f reviews", c(mean_customer_reviews_2024, mean_top_agent_customer_reviews_2024)), 
+  text = sprintf("<b>%.1f reviews</b>", c(mean_customer_reviews_2024, mean_top_agent_customer_reviews_2024)), 
   textposition = 'auto',
   hovertemplate = "%{x} have %{y:.1f} customer reviews<extra></extra>",
          marker = list(color = colors,line = list(color = 'rgb(8,48,107)', 
@@ -1026,11 +1026,21 @@ customer_review_average_percent <- plot_ly(labels = c("Top Agents Who Exceed Ave
                                            marker = list(
         colors = c('#44b2ef', '#09223d')
     ),
-    hovertemplate = "%{label}: %{percent}<extra></extra>")
+    textinfo = 'label+percent',
+                                         texttemplate = '<b>%{percent}</b>',
+    hovertemplate = "<b>%{label}:</b> %{percent}<extra></extra>")
 customer_review_average_percent <- customer_review_average_percent %>% 
 layout(title = 'Top Agents with Higher than Average Number of Reviews',
+       margin = list(
+               t = 100 
+           ),
          xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+       legend = list(
+    orientation = "h", 
+    x = 0.5,             
+    y = -0.2,
+    xanchor = "center"))
 
 customer_review_average_percent
 ```
@@ -1402,3 +1412,4 @@ otherwise be dry or tricky to understand.
 
 Throughout the whole process, I make sure my work is saved and backed up. I use
 Github to version control my work, as well as to provide a secondary backup.
+
