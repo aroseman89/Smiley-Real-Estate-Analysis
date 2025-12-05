@@ -1,4 +1,4 @@
-# Smiley-Real-Estate-Analysis
+# Smiley Real Estate Analysis
 A compact data-analysis project that explores a large-scale view of sales performance through most of 2025 and residential real estate trends. Provides reproducible scripts and notebooks for cleaning, analysis, and visualization.
 
 ## Instructions
@@ -6,27 +6,19 @@ A compact data-analysis project that explores a large-scale view of sales perfor
       <br> The primary deliverable for this submission is a single HTML report. Reviewers can open the HTML in a browser with no code execution required.
 
 **Quick instructions**
-    - *Open the HTML file (no R required)*
+    <br>*Open the HTML file (no R required)*
 1. Find the HTML file in the repository (Clever-Real-Estate-Working-Interview-Project.html)
 2. Download and open locally:
     - Option A: Click the file in GitHub, click "Raw", then Save As to download the `.html` file. Double-click the saved file to open in your browser.
     - Option B: click the download icon in the top right. Double-click the downloaded file to open in your browser.
-  5. Optional hosting (stable URL): Enable GitHub Pages (Settings → Pages) and point it at the branch/folder containing the HTML file. The published site URL will host the HTML (good if the report uses JS/CSS that GitHub's raw preview blocks).
 
 *Run the R Markdown (if you need to re-render the HTML)*
-Prerequisites
+<br>Prerequisites
 - R (>= 4.0 recommended) installed: https://cran.r-project.org/
 - (Optional) RStudio for an IDE with a Knit button: https://posit.co/download/
 - Required R packages: `rmarkdown`, `readr`, `tidyverse`, `rlang`, `purrr`, `plotly`, `knitr`, `kableExtra`, `scales`, `stringr`
 
-Install minimal packages
-In R or RStudio run:
-```r
-install.packages(c("rmarkdown", "knitr"))
-# Install any other packages the Rmd requires (see above)
-```
-
-Render from R (recommended)
+Render from R (recommended) <br>
 Open R or RStudio and run:
 ```r
 rmarkdown::render("path/to/report.Rmd")
