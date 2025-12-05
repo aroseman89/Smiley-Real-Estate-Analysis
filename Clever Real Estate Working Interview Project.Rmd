@@ -1010,7 +1010,7 @@ customer_review_average_compare <- plot_ly(
   x = c("<b>Average Agents</b>", 
         "<b>Top Agents</b>"),
   y = c(mean_customer_reviews_2024, mean_top_agent_customer_reviews_2024),
-  name = "Average Number of Customer Reviews",
+  name = "<b>Average Number of Customer Reviews</b>",
   type = "bar",
   text = sprintf("<b>%.1f reviews</b>", c(mean_customer_reviews_2024, mean_top_agent_customer_reviews_2024)), 
   textposition = 'auto',
@@ -1018,7 +1018,7 @@ customer_review_average_compare <- plot_ly(
          marker = list(color = colors,line = list(color = 'rgb(8,48,107)', 
                                                   width = 1.5))
 )
-customer_review_average_compare <- customer_review_average_compare %>% layout(title = "Average Number of Customer Reviews Compared to Top Agents",
+customer_review_average_compare <- customer_review_average_compare %>% layout(title = "<b>Average Number of Customer Reviews Compared to Top Agents</b>",
          xaxis = list(title = ""),
          yaxis = list(title = "")
 )
@@ -1034,7 +1034,7 @@ customer_review_average_percent <- plot_ly(labels = c("Top Agents Who Exceed Ave
                                          texttemplate = '<b>%{percent}</b>',
     hovertemplate = "<b>%{label}:</b> %{percent}<extra></extra>")
 customer_review_average_percent <- customer_review_average_percent %>% 
-layout(title = 'Top Agents with Higher than Average Number of Reviews',
+layout(title = '<b>Top Agents with Higher than Average Number of Reviews</b>',
        margin = list(
                t = 100 
            ),
@@ -1048,6 +1048,7 @@ layout(title = 'Top Agents with Higher than Average Number of Reviews',
 
 customer_review_average_percent
 ```
+<br>
 
 The best agents are also able to maintain a steady volume of customers. Volume
 isn't the main driver, but more (engaged!) customers means more sales! All but 
@@ -1064,23 +1065,24 @@ print(mean_top_agent_total_raw_closes)
 percent_total_raw_closes <- (sum(top_agent_per_market$total_raw_closes > mean_total_raw_closes)/ nrow(top_agent_per_market)) * 100
 print(percent_total_raw_closes)
 ```
+
 ```{r agent_success_volume_chart}
 colors <- c('#44b2ef', '#09223d')
 
 total_raw_closes_compare <- plot_ly(
-  x = c("Average Agents", 
-        "Top Agents"),
+  x = c("<b>Average Agents</b>", 
+        "<b>Top Agents</b>"),
   y = c(mean_total_raw_closes, mean_top_agent_total_raw_closes),
   name = "Average Number of Closed Deals",
   type = "bar",
-  text = sprintf("%.1f closed deals", c(mean_total_raw_closes, mean_top_agent_total_raw_closes)), 
+  text = sprintf("<b>%.1f closed deals</b>", c(mean_total_raw_closes, mean_top_agent_total_raw_closes)), 
   textposition = 'auto',
   hovertemplate = "%{x} closed %{y:.1f} deals<extra></extra>",
          marker = list(color = colors,line = list(color = 'rgb(8,48,107)', 
                                                   width = 1.5))
 )
 total_raw_closes_compare <- total_raw_closes_compare %>% layout(title = 
-                                                                  "Average Number of Closed Deals Compared to Top Agents",
+                                                                  "<b>Average Number of Closed Deals Compared to Top Agents</b>",
          xaxis = list(title = ""),
          yaxis = list(title = "")
 )
@@ -1092,9 +1094,11 @@ total_raw_closes_percent <- plot_ly(labels = c("Top Agents Who Exceed Average Nu
                                            marker = list(
         colors = c('#44b2ef', '#09223d')
     ),
-    hovertemplate = "%{label}: %{percent}<extra></extra>")
+    textinfo = 'label+percent',
+                                         texttemplate = '<b>%{percent}</b>',
+    hovertemplate = "<b>%{label}:</b> %{percent}<extra></extra>")
 total_raw_closes_percent <- total_raw_closes_percent %>% 
-layout(title = 'Top Agents with Higher than Average Number of Closed Deals',
+layout(title = '<b>Top Agents with Higher than Average Number of Closed Deals</b>',
          xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
          yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
 
@@ -1103,6 +1107,8 @@ total_raw_closes_percent
 
 Over half of top agents convert more leads into sales than average. The best agents
 are able to close 25-35% more deals than average!
+
+<br>
 
 ```{r agent_success_close, include=FALSE}
 mean_buyer_close_rate <- mean(agents$buyer_close_rate)
