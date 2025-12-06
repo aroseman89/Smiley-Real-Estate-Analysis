@@ -2,15 +2,13 @@
 title: "Smiley Real Estate Analysis"
 author: "Aro Roseman"
 date: "2025-12-05"
-output: 
+output:
   html_document:
     toc: true
     toc_float: true
-    width: 350px
     section_autonumber: true
     theme: readable
 ---
-
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
@@ -25,9 +23,11 @@ library(plotly)
 library(knitr)
 library(kableExtra)
 library(scales)
+library(stringr)
 ```
 
 ```{r import, include=FALSE}
+
 #Note: Update all file paths for your directory.
 
 agents <- read_csv("C:/Users/alyss/OneDrive/Job applications/Clever Real Estate Working Interview/agents.csv")
@@ -276,7 +276,7 @@ results <- imap(df_list, function(df, df_name) {
 
 results <- compact(results)
 
-# Create a summary table of all outlier counts
+#Create a summary table of all outlier counts
 outlier_summary <- imap_dfr(results, function(df_res, df_name) {
   map_dfr(df_res, ~ data.frame(
     Dataset = df_name,
@@ -330,7 +330,7 @@ print(listings_on_market_count_outliers)
 listings_price_increase_count_outliers <- get_outlier_rows("markets", "listings_price_increase_count")
 print(listings_price_increase_count_outliers)
 #Both outliers are in large metro areas (Houston and Portland) with a high number
-#total listings. Outliers appear to be accurate, extreme cases. Data should be
+#of total listings. Outliers appear to be accurate, extreme cases. Data should be
 #normalized before interpretation
 
 #listings_price_decrease_count
@@ -348,7 +348,7 @@ print(listings_closed_count_outliers)
 #amount
 amount_outliers <- get_outlier_rows("sales", "amount")
 print(amount_outliers)
-#This is likely a data entry error (this sale is over 52 times higher than the #next largest sale). The customer lives in Detroit, MI where the median price #at close is $205,878. It is likely a decimal point was missed during data #entry, and the correct sale price is $395,928.00. The row will be updated #with this repair
+#This is likely a data entry error (this sale is over 52 times higher than the next largest sale). The customer lives in Detroit, MI where the median price at close is $205,878. It is likely a decimal point was missed during data entry, and the correct sale price is $395,928.00. The row will be updated with this repair
 sales <- sales %>%
   mutate(
     amount = ifelse(sale_id == 3458, 395928.00, amount)
@@ -414,7 +414,7 @@ df_list$markets <- markets
 
 results_normalized <- imap(df_list, function(df, df_name) {
   
-  # Use the revised list of columns
+  #Use the revised list of columns
   cols <- columns_to_check_recheck[[df_name]]
   
   if (is.null(cols)) {
@@ -428,7 +428,7 @@ results_normalized <- imap(df_list, function(df, df_name) {
 
 results_normalized <- compact(results_normalized)
 
-# Create a summary table of all outlier counts
+#Create a summary table of all outlier counts
 outlier_summary_normalized <- imap_dfr(results_normalized, function(df_res, df_name) {
   map_dfr(df_res, ~ data.frame(
     Dataset = df_name,
@@ -503,7 +503,7 @@ agent_market_summary <- agents %>%
   )
 ```
 
-```{r closing_rate_average_chart}
+```{r closing_rate_average_chart, eval=if (knitr::is_html_output()) TRUE else FALSE}
 #Pivot to long format and sort
 agent_market_summary_long <- agent_market_summary %>%
   # Calculate an overall average for sorting reference
@@ -513,7 +513,7 @@ agent_market_summary_long <- agent_market_summary %>%
   #Keep only top 5 markets based on overall average rate
   arrange(desc(overall_avg_rate)) %>%
   slice_head(n = 5) %>%
-    #Pivot to long format for ggplot
+  #Pivot to long format for ggplot
   pivot_longer(
     cols = starts_with("avg_"),
     names_to = "Close_Rate_Type",
@@ -562,7 +562,7 @@ rate_bar <- ggplot(agent_market_summary_long, aes(x = Rate, y = market_id, fill 
     axis.title.y = element_text(face = "bold")
   )
 
-# Convert to Plotly for interactivity
+#Convert to plotly for interactivity
 ggplotly(rate_bar, tooltip = "text") %>%
 plotly::layout(legend = list(
     orientation = "h", 
@@ -572,6 +572,7 @@ plotly::layout(legend = list(
   )
   )
 ```
+
 Based on closing rates alone, it looks like the best markets are Dallas, Louisville, Raleigh, Nashville, and Cincinnati. But there's more to the story than just closing rates. Lots of factors can affect a market's performance – let's keep digging!
 
 Other important factors to consider are how long property stays on the market (DoM), the average closing price, the turnover rate, and how often a listing price increases.
@@ -597,7 +598,7 @@ market_ranking_data <- markets %>%
   left_join(agent_market_summary, by = "market_id") %>%
   left_join(customer_market_summary, by = "market_id") %>%
   
-  # Calculate total customers per 1 million people
+  #Calculate total customers per 1 million people
   mutate(
     customer_saturation_rate = total_customers / (population / 1000000)
   )
@@ -605,14 +606,13 @@ market_ranking_data <- markets %>%
 
 When we take all those metrics into account, the best markets seem to be New York, Los Angeles, Chicago, Dallas, Houston, and Washington, D.C.
 
-```{r unweighted_table}
+```{r unweighted_table, eval=if (knitr::is_html_output()) TRUE else FALSE}
 #Prepare the data
 top_markets_table_data <- market_ranking_data %>%
-  # Filter to the 5 most populous markets for a meaningful snapshot
   arrange(desc(population)) %>%
   head(5) %>%
   
-  # Select the most important metrics
+  #Select the most important metrics
   select(
     market_id,
     population,
@@ -624,7 +624,7 @@ top_markets_table_data <- market_ranking_data %>%
     avg_seller_close_rate
   ) %>%
   
-  # Rename columns for clarity in the final table
+  #Rename columns for clarity in the final table
   rename(
     Market = market_id,
     Population = population,
@@ -636,7 +636,7 @@ top_markets_table_data <- market_ranking_data %>%
     `Avg Seller Close Rate` = avg_seller_close_rate
   ) %>%
   
-  # Format the numbers
+  #Format the numbers
   mutate(
     Population = comma(Population, accuracy = 1),
     Customers = comma(Customers, accuracy = 1),
@@ -690,19 +690,19 @@ market_ranking_final <- market_ranking_data %>%
  arrange(desc(performance_score)) %>%
  mutate(rank = row_number())
 
-# The Top 5 Best Markets
+#Top 5 Best Markets
 top_5_markets <- market_ranking_final %>%
  head(5)
 
 ```
 
-```{r table_weighted}
+```{r table_weighted, eval=if (knitr::is_html_output()) TRUE else FALSE}
 top_5_score_table_data <- top_5_markets %>%
   
   #Ensure data is sorted by rank derived from the performance_score
   arrange(rank) %>%
   
-  # 1. Select the new calculated metrics first, followed by the raw metrics
+  #Select new calculated metrics first, followed by raw metrics
   select(
     Rank = rank,                             
     Score = performance_score,               
@@ -716,9 +716,9 @@ top_5_score_table_data <- top_5_markets %>%
     `Avg Seller Close Rate` = avg_seller_close_rate
   ) %>%
   
-  # 2. Format the numbers
+  #Format numbers
   mutate(
-    Score = round(Score, 2), # Format the calculated score
+    Score = round(Score, 2), 
     Population = comma(Population, accuracy = 1),
     Customers = comma(Customers, accuracy = 1),
     `Median Price` = dollar(`Median Price`, accuracy = 1),
@@ -736,6 +736,7 @@ top_5_score_table_data %>%
   column_spec(1, bold = T, background = "#09223d", color = "white") %>%
   column_spec(2, bold = T, color = "#44b2ef")
 ```
+
 ### 2.1.2 Most Efficient Markets 🚀
 
 California and (and New York, to a lesser extent) still may be overrepresented  here. The previous scoring was still weighted heavily to the wealthiest and most densely populated states, despite normalization. But where is Smiley Real Estate most *efficient* rather than merely depending on population and wealth factors? The following analysis weights each factor according to importance: closing rates and customer saturation are weighted more highly, while median closing price is weighted lower to favor efficiency over property value or population.
@@ -769,18 +770,18 @@ market_ranking_final_weighted <- market_ranking_data_scored %>%
   arrange(desc(performance_score_weighted)) %>%
   mutate(rank_weighted = row_number())
 
-# The Top 5 Best Markets For Efficiency
+#Top 5 Best Markets For Efficiency
 top_5_markets_weighted <- market_ranking_final_weighted %>%
   head(5)
 ```
 
-```{r table_efficiency}
+```{r table_efficiency, eval=if (knitr::is_html_output()) TRUE else FALSE}
 efficiency_table_data <- top_5_markets_weighted %>%
   
   #Ensure data is sorted by new weighted rank
   arrange(rank_weighted) %>%
   
-  #Select the new calculated metrics first, followed by the raw metrics
+  #Select new calculated metrics first, followed by raw metrics
   select(
     Rank = rank_weighted,                     
     Score = performance_score_weighted,       
@@ -824,7 +825,7 @@ In contrast, low turnover markets have the highest price volatility. These marke
 
 One notable exception is Portland, OR. Despite having a moderate turnover rate, Portland exhibits an anomalously high rate of listing price increases (noted as an outlier in the cleaning section and as seen on the chart). This extreme volatility, in contrast to the typical market maturity trend, suggests that Portland's price appreciation may be driven by external, non-liquidity factors (such as regulatory constraints or unique geographic supply issues). For an investor, this market represents high potential reward but with significantly less predictability than other high-turnover markets.
 
-```{r market_trend_chart, echo=FALSE, message=FALSE}
+```{r market_trend_chart, echo=FALSE, message=FALSE, eval=if (knitr::is_html_output()) TRUE else FALSE}
 market_trend_chart <- market_ranking_data %>%
   filter(!is.na(turnover_rate) & !is.na(increase_rate) & !is.na(days_on_market_median)) %>%
   
@@ -949,7 +950,7 @@ agent_ranking_zscores <- agent_ranking_metrics %>%
 agent_ranking_final <- agent_ranking_metrics %>%
   left_join(agent_ranking_zscores, by = "agent_id") %>%
   
-  # Calculate the weighted score
+  #Calculate the weighted score
   mutate(
     performance_score = 
       (Z_buyer_close_rate * 1.0) + #direct skill at converting leads to sales
@@ -972,12 +973,12 @@ top_agent_per_market <- agent_ranking_final %>%
          weighted_rating, avg_rating_2024, customer_reviews_2024)
 ```
 
-```{r agent_table}
+```{r agent_table, eval=if (knitr::is_html_output()) TRUE else FALSE}
 top_10_agents_table <- top_agent_per_market %>%
  
    head(10) %>% 
   
-  # Select the most important metrics
+  #Select the most important metrics
   select(
     Rank = performance_score, 
     Market = market_id,
@@ -990,7 +991,7 @@ top_10_agents_table <- top_agent_per_market %>%
     `Total Reviews` = customer_reviews_2024
   ) %>%
   
-  # Format the numbers
+  #Format the numbers
   mutate(
     Rank = row_number(), 
     Score = round(Score, 2),
@@ -1001,19 +1002,20 @@ top_10_agents_table <- top_agent_per_market %>%
     `Total Reviews` = comma(`Total Reviews`, accuracy = 1)
   ) %>%
   
-  # Reorder columns to place rank first
+  #Reorder columns to place rank first
   select(Rank, Market, Agent, everything())
 
-# Generate the HTML table
+#Generate the HTML table
 top_10_agents_table %>%
   kbl(caption = "Top 10 Agents by Composite Performance Score (Best Agent from Each Market)") %>%
   kable_classic_2(full_width = F, html_font = "Cambria") %>%
-  # Highlight the Rank and Score
+  #Highlight the Rank and Score
   column_spec(1, bold = T, background = "#09223d", color = "white") %>%
   column_spec(4, bold = T, color = "#44b2ef") %>% # Score
   column_spec(5, bold = T, color = "#44b2ef") %>% # Weighted Rating
   row_spec(0, bold = T, background = "#f2f2f2")
 ```
+
 <small>The table above highlights the top 10 agents overall. For a complete listing of the best agent in every market analyzed, the complete, ranked list can be viewed [here](https://github.com/aroseman89/Smiley-Real-Estate-Analysis/blob/main/best_agents_per_market.csv).</small>
  
 ```{r full_agent_ranking, include=FALSE}
@@ -1039,7 +1041,7 @@ print(percent_customer_review_2024)
 
 <br>
 
-```{r agent_success_customer_engagement_chart, echo=FALSE}
+```{r agent_success_customer_engagement_chart, echo=FALSE, eval=if (knitr::is_html_output()) TRUE else FALSE}
 colors <- c('#44b2ef', '#09223d')
 
 customer_review_average_compare <- plot_ly(
@@ -1101,7 +1103,7 @@ print(percent_total_raw_closes)
 
 <br>
 
-```{r agent_success_volume_chart}
+```{r agent_success_volume_chart, eval=if (knitr::is_html_output()) TRUE else FALSE}
 colors <- c('#44b2ef', '#09223d')
 
 total_raw_closes_compare <- plot_ly(
@@ -1171,13 +1173,13 @@ percent_seller_close_rate <- (sum(top_agent_per_market$seller_close_rate > mean_
 print(percent_seller_close_rate)
 ```
 
-```{r agent_success_close_chart}
+```{r agent_success_close_chart, eval=if (knitr::is_html_output()) TRUE else FALSE}
 Categories <- c("Average Agents", "Top Agents")
 Buyer_Rate = c(mean_buyer_close_rate, mean_top_agent_buyer_close_rate)
 Seller_Rate = c(mean_seller_close_rate, mean_top_agent_seller_close_rate)
 data <- data.frame(Categories, Buyer_Rate, Seller_Rate)
 
-# Define colors
+#Define colors
 colors <- c('#44b2ef', '#09223d')
 
 #Define text labels for the bars
@@ -1298,6 +1300,7 @@ combined_pie_charts <- combined_pie_charts %>%
 
 combined_pie_charts
 ```
+
 The bottom line? The best agents are the ones who can effectively engage with a high volume of customers without sacrificing quality. More customers means more opportunities, but only if you can keep them happy!
 
 ## 2.3 Area for Growth 🪴
@@ -1307,7 +1310,7 @@ As discussed above, New York City and Los Angeles are two of the most successful
 
 As a case study, let's compare New York City (a high value market) to Grand Rapids (a highly efficient market).
 
-```{r case_study}
+```{r case_study, eval=if (knitr::is_html_output()) TRUE else FALSE}
 grand_rapids_price <- markets %>%
   filter(market_id == "grand_rapids_mi") %>%
   pull(price_closed_median)
@@ -1444,6 +1447,3 @@ I addressed the challenge by enforcing the standardization step and then adjusti
 Analyses don't mean much if no one can understand them. After the analyses, I clean up the report. I make sure the report itself is formatted and easy to read. I put the finishing touches on all the visualizations to make sure the data I want to stand out really pops. Graphic design and intentional formatting can go a long way to enhancing communication, especially for subjects that can otherwise be dry or tricky to understand.
 
 Throughout the whole process, I make sure my work is saved and backed up. I use Github to version control my work, as well as to provide a secondary backup.
-
-
-
